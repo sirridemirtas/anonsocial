@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -22,20 +23,31 @@ func Register(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var user models.User
+	// Get form data
+	username := c.PostForm("username")
+	password := c.PostForm("password")
+	universityId := c.PostForm("universityId")
 
-	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// Validate required fields
+	if username == "" || password == "" || universityId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username, password and universityId are required"})
 		return
 	}
 
-	// Varsayılan değerleri ayarla
-	user.Role = 0 // Normal kullanıcı için 0
-	user.Salt = models.GenerateSalt()
-	user.Password = user.HashPassword(user.Password)
-	user.CreatedAt = time.Now()
+	// Create user object with only allowed fields
+	user := models.User{
+		Username:     username,
+		UniversityID: universityId,
+		CreatedAt:    time.Now(),
+		Role:         0, // Default role
+		IsPrivate:    false,
+	}
 
-	// Validate user input
+	// Generate salt and hash password
+	user.Salt = models.GenerateSalt()
+	user.Password = user.HashPassword(password)
+
+	// Validate user data
 	if errors := utils.ValidateUser(&user); len(errors) > 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"errors": errors})
 		return
@@ -43,7 +55,7 @@ func Register(c *gin.Context) {
 
 	result, err := userCollection.InsertOne(ctx, user)
 	if err != nil {
-		if mongo.IsDuplicateKeyError(err) {
+		if mongo.IsDuplicateKeyError(err) || strings.Contains(err.Error(), "duplicate key error") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
 			return
 		}
@@ -54,9 +66,9 @@ func Register(c *gin.Context) {
 	user.ID = result.InsertedID.(primitive.ObjectID)
 
 	// Generate JWT token after successful registration
-	claims := &middleware.Claims{ // Changed from models.Claims to middleware.Claims
+	claims := &middleware.Claims{
 		UserID: user.ID.Hex(),
-		Role:   user.Role, // This is now int
+		Role:   user.Role,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
 		},
@@ -81,31 +93,29 @@ func Register(c *gin.Context) {
 }
 
 func Login(c *gin.Context) {
-	var loginData struct {
-		Username string `json:"username" binding:"required"`
-		Password string `json:"password" binding:"required"`
-	}
+	username := c.PostForm("username")
+	password := c.PostForm("password")
 
-	if err := c.ShouldBindJSON(&loginData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if username == "" || password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "username and password are required"})
 		return
 	}
 
 	var user models.User
-	err := userCollection.FindOne(context.Background(), bson.M{"username": loginData.Username}).Decode(&user)
+	err := userCollection.FindOne(context.Background(), bson.M{"username": username}).Decode(&user)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	if !user.ValidatePassword(loginData.Password) {
+	if !user.ValidatePassword(password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	claims := &middleware.Claims{ // Changed from models.Claims to middleware.Claims
+	claims := &middleware.Claims{
 		UserID: user.ID.Hex(),
-		Role:   user.Role, // This is now int
+		Role:   user.Role,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
 		},

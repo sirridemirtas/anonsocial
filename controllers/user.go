@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/sirridemirtas/anonsocial/models"
 )
@@ -18,14 +20,32 @@ var userCollection *mongo.Collection
 
 func SetUserCollection(client *mongo.Client) {
 	userCollection = client.Database("anonsocial").Collection("users")
+
+	// Create unique index for username
+	_, err := userCollection.Indexes().CreateOne(
+		context.Background(),
+		mongo.IndexModel{
+			Keys:    bson.D{{Key: "username", Value: 1}},
+			Options: options.Index().SetUnique(true),
+		},
+	)
+
+	if err != nil {
+		log.Fatal("Error creating unique index for username:", err)
+	}
 }
 
 func GetUsers(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	projection := bson.M{
+		"password": 0,
+		"salt":     0,
+	}
+
 	var users []models.User
-	cursor, err := userCollection.Find(ctx, bson.M{})
+	cursor, err := userCollection.Find(ctx, bson.M{}, options.Find().SetProjection(projection))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -50,8 +70,13 @@ func GetUser(c *gin.Context) {
 		return
 	}
 
+	projection := bson.M{
+		"password": 0,
+		"salt":     0,
+	}
+
 	var user models.User
-	err = userCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
+	err = userCollection.FindOne(ctx, bson.M{"_id": id}, options.FindOne().SetProjection(projection)).Decode(&user)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return

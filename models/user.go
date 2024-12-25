@@ -12,12 +12,12 @@ import (
 type User struct {
 	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 	Username     string             `bson:"username" json:"username" validate:"required,alphanum,min=3,max=16"`
-	Password     string             `bson:"password" json:"password" validate:"required"`
+	Password     string             `bson:"password" json:"-"` // Never send in JSON
 	IsPrivate    bool               `bson:"isPrivate" json:"isPrivate"`
 	Role         int                `bson:"role" json:"role"`
 	UniversityID string             `bson:"universityId" json:"universityId" validate:"required,university"`
 	CreatedAt    time.Time          `bson:"createdAt" json:"createdAt"`
-	Salt         string             `bson:"salt" json:"-"`
+	Salt         string             `bson:"salt" json:"-"` // Never send in JSON
 }
 
 func GenerateSalt() string {
