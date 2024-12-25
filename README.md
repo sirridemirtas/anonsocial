@@ -12,7 +12,7 @@ A social media platform backend written in Go using Gin framework and MongoDB.
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/anonsocial.git
+git clone https://github.com/sirridemirtas/anonsocial.git
 ```
 
 2. Install dependencies:
