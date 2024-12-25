@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirridemirtas/anonsocial/controllers"
+	"github.com/sirridemirtas/anonsocial/middleware"
 )
 
 func UserRoutes(rg *gin.RouterGroup) {
@@ -10,8 +11,7 @@ func UserRoutes(rg *gin.RouterGroup) {
 	{
 		userGroup.GET("/", controllers.GetUsers)
 		userGroup.GET("/:id", controllers.GetUser)
-		userGroup.POST("/", controllers.CreateUser)
-		userGroup.PUT("/:id", controllers.UpdateUser)
-		userGroup.DELETE("/:id", controllers.DeleteUser)
+		userGroup.PUT("/:id", middleware.Auth(0), controllers.UpdateUser)    // Normal user
+		userGroup.DELETE("/:id", middleware.Auth(1), controllers.DeleteUser) // Admin only
 	}
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/sirridemirtas/anonsocial/config"
 	"github.com/sirridemirtas/anonsocial/controllers"
 	"github.com/sirridemirtas/anonsocial/routes"
 )
@@ -17,12 +18,10 @@ import (
 var client *mongo.Client
 
 func connectDB() *mongo.Client {
-	uri := "mongodb://localhost:27017"
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(config.AppConfig.MongoDBURI))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,6 +37,8 @@ func connectDB() *mongo.Client {
 }
 
 func main() {
+	config.LoadConfig()
+
 	client := connectDB()
 	defer client.Disconnect(nil)
 
@@ -47,6 +48,7 @@ func main() {
 
 	apiV1 := router.Group("/api/v1")
 	routes.UserRoutes(apiV1)
+	routes.AuthRoutes(apiV1)
 
-	router.Run(":8080")
+	router.Run(":" + config.AppConfig.Port)
 }

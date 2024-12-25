@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +12,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/sirridemirtas/anonsocial/models"
-	"github.com/sirridemirtas/anonsocial/utils"
 )
 
 var userCollection *mongo.Collection
@@ -60,57 +58,6 @@ func GetUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, user)
-}
-
-func CreateUser(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	var user models.User
-
-	// Check content type and bind accordingly
-	contentType := c.GetHeader("Content-Type")
-	if contentType == "application/json" {
-		if err := c.ShouldBindJSON(&user); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error":   "Invalid JSON format",
-				"details": err.Error(),
-			})
-			return
-		}
-	} else {
-		// Handle form data
-		user = models.User{
-			Username:     c.PostForm("username"),
-			Password:     c.PostForm("password"),
-			UniversityID: c.PostForm("universityId"),
-			IsPrivate:    c.PostForm("isPrivate") == "true",
-		}
-
-		if role, err := strconv.Atoi(c.PostForm("role")); err == nil {
-			user.Role = role
-		}
-	}
-
-	// Validate user input
-	if errors := utils.ValidateUser(&user); len(errors) > 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"errors": errors})
-		return
-	}
-
-	user.CreatedAt = time.Now()
-	result, err := userCollection.InsertOne(ctx, user)
-	if err != nil {
-		if mongo.IsDuplicateKeyError(err) {
-			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	user.ID = result.InsertedID.(primitive.ObjectID)
-	c.JSON(http.StatusCreated, user)
 }
 
 func UpdateUser(c *gin.Context) {
