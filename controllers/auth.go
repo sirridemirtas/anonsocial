@@ -23,21 +23,21 @@ func Register(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Get form data
-	username := c.PostForm("username")
-	password := c.PostForm("password")
-	universityId := c.PostForm("universityId")
+	var input struct {
+		Username     string `json:"username" binding:"required"`
+		Password     string `json:"password" binding:"required"`
+		UniversityID string `json:"universityId" binding:"required"`
+	}
 
-	// Validate required fields
-	if username == "" || password == "" || universityId == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username, password and universityId are required"})
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Create user object with only allowed fields
 	user := models.User{
-		Username:     username,
-		UniversityID: universityId,
+		Username:     input.Username,
+		UniversityID: input.UniversityID,
 		CreatedAt:    time.Now(),
 		Role:         0, // Default role
 		IsPrivate:    false,
@@ -45,7 +45,7 @@ func Register(c *gin.Context) {
 
 	// Generate salt and hash password
 	user.Salt = models.GenerateSalt()
-	user.Password = user.HashPassword(password)
+	user.Password = user.HashPassword(input.Password)
 
 	// Validate user data
 	if errors := utils.ValidateUser(&user); len(errors) > 0 {
@@ -93,22 +93,24 @@ func Register(c *gin.Context) {
 }
 
 func Login(c *gin.Context) {
-	username := c.PostForm("username")
-	password := c.PostForm("password")
+	var input struct {
+		Username string `json:"username" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
 
-	if username == "" || password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "username and password are required"})
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	var user models.User
-	err := userCollection.FindOne(context.Background(), bson.M{"username": username}).Decode(&user)
+	err := userCollection.FindOne(context.Background(), bson.M{"username": input.Username}).Decode(&user)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	if !user.ValidatePassword(password) {
+	if !user.ValidatePassword(input.Password) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
