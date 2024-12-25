@@ -12,6 +12,7 @@ import (
 
 	"github.com/sirridemirtas/anonsocial/config"
 	"github.com/sirridemirtas/anonsocial/controllers"
+	"github.com/sirridemirtas/anonsocial/middleware"
 	"github.com/sirridemirtas/anonsocial/routes"
 )
 
@@ -45,6 +46,7 @@ func main() {
 	controllers.SetUserCollection(client)
 
 	router := gin.Default()
+	router.Use(middleware.Cors()) // Add CORS middleware
 
 	apiV1 := router.Group("/api/v1")
 	routes.UserRoutes(apiV1)
