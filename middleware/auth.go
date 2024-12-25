@@ -40,6 +40,7 @@ func Auth(requiredRole int) gin.HandlerFunc {
 			return
 		}
 
+		c.Set("claims", claims)
 		c.Set("userId", claims.UserID)
 		c.Set("userRole", claims.Role)
 		c.Next()

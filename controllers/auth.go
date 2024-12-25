@@ -138,3 +138,28 @@ func Logout(c *gin.Context) {
 	c.SetCookie("token", "", -1, "/", "", false, true)
 	c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
 }
+
+func TokenInfo(c *gin.Context) {
+	claims, exists := c.Get("claims")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not get token info"})
+		return
+	}
+
+	tokenClaims := claims.(*middleware.Claims)
+
+	var user models.User
+	id, _ := primitive.ObjectIDFromHex(tokenClaims.UserID)
+	err := userCollection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"userId":    tokenClaims.UserID,
+		"username":  user.Username,
+		"role":      tokenClaims.Role,
+		"expiresAt": time.Unix(tokenClaims.ExpiresAt, 0),
+	})
+}
