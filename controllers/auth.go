@@ -67,8 +67,10 @@ func Register(c *gin.Context) {
 
 	// Generate JWT token after successful registration
 	claims := &middleware.Claims{
-		UserID: user.ID.Hex(),
-		Role:   user.Role,
+		UserID:       user.ID.Hex(),
+		Username:     user.Username,
+		Role:         user.Role,
+		UniversityID: user.UniversityID,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
 		},
@@ -85,9 +87,10 @@ func Register(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Registration successful",
 		"user": gin.H{
-			"id":       user.ID,
-			"username": user.Username,
-			"role":     user.Role,
+			"id":           user.ID,
+			"username":     user.Username,
+			"role":         user.Role,
+			"universityId": user.UniversityID,
 		},
 	})
 }
@@ -116,8 +119,10 @@ func Login(c *gin.Context) {
 	}
 
 	claims := &middleware.Claims{
-		UserID: user.ID.Hex(),
-		Role:   user.Role,
+		UserID:       user.ID.Hex(),
+		Username:     user.Username,
+		Role:         user.Role,
+		UniversityID: user.UniversityID,
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
 		},
@@ -148,18 +153,11 @@ func TokenInfo(c *gin.Context) {
 
 	tokenClaims := claims.(*middleware.Claims)
 
-	var user models.User
-	id, _ := primitive.ObjectIDFromHex(tokenClaims.UserID)
-	err := userCollection.FindOne(context.Background(), bson.M{"_id": id}).Decode(&user)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
-
 	c.JSON(http.StatusOK, gin.H{
-		"userId":    tokenClaims.UserID,
-		"username":  user.Username,
-		"role":      tokenClaims.Role,
-		"expiresAt": time.Unix(tokenClaims.ExpiresAt, 0),
+		"userId":       tokenClaims.UserID,
+		"username":     tokenClaims.Username,
+		"role":         tokenClaims.Role,
+		"universityId": tokenClaims.UniversityID,
+		"expiresAt":    time.Unix(tokenClaims.ExpiresAt, 0),
 	})
 }

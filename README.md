@@ -39,15 +39,26 @@ GO_ENV=production go run main.go
 
 ## API Endpoints
 
+Base URL: `/api/v1`
+
 ### Auth
 
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login
-- `POST /api/auth/logout` - Logout (requires auth)
+- `POST /auth/register` - Register new user
+- `POST /auth/login` - Login
+- `POST /auth/logout` - Logout (requires auth)
 
 ### Users
 
-- `GET /api/users` - Get all users
-- `GET /api/users/:id` - Get user by ID
-- `PUT /api/users/:id` - Update user (requires auth)
-- `DELETE /api/users/:id` - Delete user (requires admin)
+- `GET /users` - Get all users
+- `GET /users/:id` - Get user by ID
+- `PUT /users/:id` - Update user (requires auth)
+- `DELETE /users/:id` - Delete user (requires admin)
+
+### Posts
+
+- `GET /posts` - Get all posts
+- `GET /posts/:id` - Get post by ID
+- `GET /posts/university/:universityId` - Get posts by university
+- `GET /posts/:id/replies` - Get post replies
+- `POST /posts` - Create new post (requires auth)
+- `DELETE /posts/:id` - Delete post (requires auth)

@@ -44,6 +44,7 @@ func main() {
 	defer client.Disconnect(nil)
 
 	controllers.SetUserCollection(client)
+	controllers.SetPostCollection(client)
 
 	router := gin.Default()
 	router.Use(middleware.Cors()) // Add CORS middleware
@@ -51,6 +52,7 @@ func main() {
 	apiV1 := router.Group("/api/v1")
 	routes.UserRoutes(apiV1)
 	routes.AuthRoutes(apiV1)
+	routes.PostRoutes(apiV1)
 
 	router.Run(":" + config.AppConfig.Port)
 }
