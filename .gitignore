@@ -61,3 +61,5 @@ Temporary Items
 
 tmp
 .env.production
+
+/static
