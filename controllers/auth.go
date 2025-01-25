@@ -30,7 +30,7 @@ func Register(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -56,10 +56,10 @@ func Register(c *gin.Context) {
 	result, err := userCollection.InsertOne(ctx, user)
 	if err != nil {
 		if mongo.IsDuplicateKeyError(err) || strings.Contains(err.Error(), "duplicate key error") {
-			c.JSON(http.StatusConflict, gin.H{"error": "Username already exists"})
+			c.JSON(http.StatusConflict, gin.H{"message": "Kullanıcı adı zaten alınmış"})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
 
@@ -79,13 +79,13 @@ func Register(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(config.AppConfig.JWTSecret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Token oluşturulamadı"})
 		return
 	}
 
 	c.SetCookie("token", tokenString, 3600*24, "/", "", false, true)
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Registration successful",
+		"message": "Kayıt başarılı",
 		"user": gin.H{
 			"id":           user.ID,
 			"username":     user.Username,
@@ -102,19 +102,19 @@ func Login(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}
 
 	var user models.User
 	err := userCollection.FindOne(context.Background(), bson.M{"username": input.Username}).Decode(&user)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Kullanıcı adı veya şifre hatalı"})
 		return
 	}
 
 	if !user.ValidatePassword(input.Password) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Kullanıcı adı veya şifre hatalı"})
 		return
 	}
 
@@ -131,23 +131,23 @@ func Login(c *gin.Context) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte(config.AppConfig.JWTSecret))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Token oluşturulamadı"})
 		return
 	}
 
 	c.SetCookie("token", tokenString, 3600*24, "/", "", false, true)
-	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
+	c.JSON(http.StatusOK, gin.H{"message": "Giriş başarılı"})
 }
 
 func Logout(c *gin.Context) {
 	c.SetCookie("token", "", -1, "/", "", false, true)
-	c.JSON(http.StatusOK, gin.H{"message": "Logout successful"})
+	c.JSON(http.StatusOK, gin.H{"message": "Çıkış başarılı"})
 }
 
 func TokenInfo(c *gin.Context) {
 	claims, exists := c.Get("claims")
 	if !exists {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not get token info"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Token bilgileri alınamadı"})
 		return
 	}
 
