@@ -14,6 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/sirridemirtas/anonsocial/models"
+	"github.com/sirridemirtas/anonsocial/utils"
 )
 
 var userCollection *mongo.Collection
@@ -146,4 +147,51 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+}
+
+func CheckUsernameAvailability(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	username := c.Param("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username parameter is required"})
+		return
+	}
+
+	// Validate username using the validator utility
+	validationErrors := utils.ValidateUsername(username)
+
+	// If there are validation errors, return them
+	if len(validationErrors) > 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"available": false,
+			"valid":     false,
+			"message":   validationErrors[0], // Return the first error message
+		})
+		return
+	}
+
+	// If format is valid, check if the username already exists in the database
+	count, err := userCollection.CountDocuments(ctx, bson.M{"username": username})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if count > 0 {
+		// Username is already taken
+		c.JSON(http.StatusOK, gin.H{
+			"available": false,
+			"valid":     true,
+			"message":   "Username is already taken",
+		})
+	} else {
+		// Username is available
+		c.JSON(http.StatusOK, gin.H{
+			"available": true,
+			"valid":     true,
+			"message":   "Username is available",
+		})
+	}
 }

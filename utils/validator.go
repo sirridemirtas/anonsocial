@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/sirridemirtas/anonsocial/data"
@@ -38,6 +40,37 @@ func ValidateUser(user interface{}) []string {
 				errors = append(errors, "invalid university ID")
 			}
 		}
+	}
+
+	return errors
+}
+
+// ValidateUsername checks if a username meets the requirements:
+// - alphanumeric only
+// - between 3-16 characters long
+// Returns a slice of error messages, empty if valid
+func ValidateUsername(username string) []string {
+	var errors []string
+
+	// Check if empty
+	if username == "" {
+		errors = append(errors, "username is required")
+		return errors
+	}
+
+	// Check length (3-16 characters)
+	length := utf8.RuneCountInString(username)
+	if length < 3 {
+		errors = append(errors, "username must be at least 3 characters long")
+	}
+	if length > 16 {
+		errors = append(errors, "username must not exceed 16 characters")
+	}
+
+	// Check if alphanumeric only
+	alphanumeric := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
+	if !alphanumeric.MatchString(username) {
+		errors = append(errors, "username must contain only letters and numbers")
 	}
 
 	return errors
