@@ -136,7 +136,11 @@ func Login(c *gin.Context) {
 	}
 
 	c.SetCookie("token", tokenString, 3600*24, "/", "", false, true)
-	c.JSON(http.StatusOK, gin.H{"message": "Giriş başarılı"})
+	c.JSON(http.StatusOK, gin.H{
+		"message":      "Giriş başarılı",
+		"username":     user.Username,
+		"universityId": user.UniversityID,
+	})
 }
 
 func Logout(c *gin.Context) {
