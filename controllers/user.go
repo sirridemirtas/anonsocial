@@ -41,6 +41,7 @@ func GetUsers(c *gin.Context) {
 	defer cancel()
 
 	projection := bson.M{
+		"_id":      0, // Exclude ID
 		"password": 0,
 		"salt":     0,
 	}
@@ -65,19 +66,20 @@ func GetUser(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	id, err := primitive.ObjectIDFromHex(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+	username := c.Param("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username parameter is required"})
 		return
 	}
 
 	projection := bson.M{
+		"_id":      0, // Exclude ID
 		"password": 0,
 		"salt":     0,
 	}
 
 	var user models.User
-	err = userCollection.FindOne(ctx, bson.M{"_id": id}, options.FindOne().SetProjection(projection)).Decode(&user)
+	err := userCollection.FindOne(ctx, bson.M{"username": username}, options.FindOne().SetProjection(projection)).Decode(&user)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return

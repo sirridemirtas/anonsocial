@@ -50,9 +50,10 @@ Base URL: `/api/v1`
 ### Users
 
 - `GET /users` - Get all users
-- `GET /users/:id` - Get user by ID
+- `GET /users/:username` - Get user by ID
 - `PUT /users/:id` - Update user (requires auth)
 - `DELETE /users/:id` - Delete user (requires admin)
+- `GET /auth/check-username/:username` - Check username
 
 ### Posts
 

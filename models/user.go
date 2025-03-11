@@ -10,7 +10,7 @@ import (
 )
 
 type User struct {
-	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	ID           primitive.ObjectID `bson:"_id,omitempty" json:"-"` // Change from json:"id,omitempty" to json:"-" to completely hide it
 	Username     string             `bson:"username" json:"username" validate:"required,alphanum,min=3,max=16"`
 	Password     string             `bson:"password" json:"-"` // Never send in JSON
 	IsPrivate    bool               `bson:"isPrivate" json:"isPrivate"`
