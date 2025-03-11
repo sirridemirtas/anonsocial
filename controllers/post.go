@@ -33,12 +33,11 @@ func CreatePost(c *gin.Context) {
 		return
 	}
 
-	userID := c.GetString("userId")
+	username := c.GetString("username")
 	universityID := c.GetString("universityId")
-	userObjID, _ := primitive.ObjectIDFromHex(userID)
 
 	post := models.Post{
-		UserID:    userObjID,
+		Username:  username,
 		Content:   input.Content,
 		CreatedAt: time.Now(),
 	}
@@ -184,8 +183,7 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	userId := c.GetString("userId")
-	userObjID, _ := primitive.ObjectIDFromHex(userId)
+	username := c.GetString("username")
 
 	var post models.Post
 	err = postCollection.FindOne(ctx, bson.M{"_id": postId}).Decode(&post)
@@ -194,7 +192,7 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	if post.UserID != userObjID && c.GetInt("userRole") != 1 {
+	if post.Username != username && c.GetInt("userRole") != 1 {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Not authorized to delete this post"})
 		return
 	}
