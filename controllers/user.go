@@ -22,17 +22,31 @@ var userCollection *mongo.Collection
 func SetUserCollection(client *mongo.Client) {
 	userCollection = client.Database("anonsocial").Collection("users")
 
-	// Create unique index for username
-	_, err := userCollection.Indexes().CreateOne(
+	// First, drop the existing index if it exists
+	_, err := userCollection.Indexes().DropOne(
+		context.Background(),
+		"username_1",
+	)
+
+	// It's okay if the index doesn't exist, so we don't check the error
+
+	// Create unique index for username with collation for case-insensitivity
+	_, err = userCollection.Indexes().CreateOne(
 		context.Background(),
 		mongo.IndexModel{
-			Keys:    bson.D{{Key: "username", Value: 1}},
-			Options: options.Index().SetUnique(true),
+			Keys: bson.D{{Key: "username", Value: 1}},
+			Options: options.Index().
+				SetUnique(true).
+				SetName("username_case_insensitive").
+				SetCollation(&options.Collation{
+					Locale:   "en",
+					Strength: 2, // Case-insensitive comparison
+				}),
 		},
 	)
 
 	if err != nil {
-		log.Fatal("Error creating unique index for username:", err)
+		log.Fatal("Error creating unique case-insensitive index for username:", err)
 	}
 }
 
@@ -78,8 +92,14 @@ func GetUser(c *gin.Context) {
 		"salt":     0,
 	}
 
+	// Use collation option for case-insensitive search
+	opts := options.FindOne().SetProjection(projection).SetCollation(&options.Collation{
+		Locale:   "en",
+		Strength: 2, // Case-insensitive comparison
+	})
+
 	var user models.User
-	err := userCollection.FindOne(ctx, bson.M{"username": username}, options.FindOne().SetProjection(projection)).Decode(&user)
+	err := userCollection.FindOne(ctx, bson.M{"username": username}, opts).Decode(&user)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
@@ -174,8 +194,14 @@ func CheckUsernameAvailability(c *gin.Context) {
 		return
 	}
 
-	// If format is valid, check if the username already exists in the database
-	count, err := userCollection.CountDocuments(ctx, bson.M{"username": username})
+	// Use collation option for case-insensitive search
+	opts := options.Count().SetCollation(&options.Collation{
+		Locale:   "en",
+		Strength: 2, // Case-insensitive comparison
+	})
+
+	// If format is valid, check if the username already exists in the database (case-insensitive)
+	count, err := userCollection.CountDocuments(ctx, bson.M{"username": username}, opts)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
