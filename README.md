@@ -54,6 +54,7 @@ Base URL: `/api/v1`
 - `PUT /users/:id` - Update user (requires auth)
 - `DELETE /users/:id` - Delete user (requires admin)
 - `GET /auth/check-username/:username` - Check username
+- `GET /users/:username/posts` - Get posts by user
 
 ### Posts
 
@@ -63,3 +64,8 @@ Base URL: `/api/v1`
 - `GET /posts/:id/replies` - Get post replies
 - `POST /posts` - Create new post (requires auth)
 - `DELETE /posts/:id` - Delete post (requires auth)
+
+### Replies
+
+- `GET /posts/:id/replies` - Get replies by post
+- `POST /posts/:id/replies` - Create reply (requires auth)

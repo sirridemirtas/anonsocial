@@ -212,3 +212,30 @@ func DeletePost(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Post and its replies deleted successfully"})
 }
+
+func GetPostsByUser(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	username := c.Param("username")
+	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+
+	cursor, err := postCollection.Find(ctx, bson.M{
+		"username": username,
+		"replyTo":  nil,
+	}, opts)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var posts []models.Post
+	if err = cursor.All(ctx, &posts); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, posts)
+}

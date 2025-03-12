@@ -16,4 +16,8 @@ func PostRoutes(rg *gin.RouterGroup) {
 		posts.POST("/", middleware.Auth(0), controllers.CreatePost)
 		posts.DELETE("/:id", middleware.Auth(0), controllers.DeletePost)
 	}
+	users := rg.Group("/users")
+	{
+		users.GET("/:username/posts", controllers.GetPostsByUser)
+	}
 }

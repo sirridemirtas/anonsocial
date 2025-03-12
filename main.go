@@ -26,7 +26,6 @@ func main() {
 	routes.UserRoutes(apiV1)
 	routes.AuthRoutes(apiV1)
 	routes.PostRoutes(apiV1)
-
 	routes.StaticRoutes(router)
 
 	router.Run(":" + config.AppConfig.Port)
