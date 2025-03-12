@@ -21,6 +21,24 @@ func StaticRoutes(router *gin.Engine) {
 			return
 		}
 
+		// Redirect /university/:id to static/university.html
+		if strings.HasPrefix(path, "/university/") {
+			c.File("./static/university.html")
+			return
+		}
+
+		// Redirect /@:username to static/user.html
+		if strings.HasPrefix(path, "/@") {
+			c.File("./static/user.html")
+			return
+		}
+
+		// Redirect /post/:id to static/post.html
+		if strings.HasPrefix(path, "/post/") {
+			c.File("./static/post.html")
+			return
+		}
+
 		staticPath := "./static" + path
 		if _, err := os.Stat(staticPath); err == nil {
 			c.File(staticPath)
