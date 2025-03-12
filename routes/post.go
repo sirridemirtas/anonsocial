@@ -9,7 +9,7 @@ import (
 func PostRoutes(rg *gin.RouterGroup) {
 	posts := rg.Group("/posts")
 	{
-		posts.GET("/", controllers.GetPosts)
+		posts.GET("", controllers.GetPosts)
 		posts.GET("/:id", controllers.GetPost)
 		posts.GET("/university/:universityId", controllers.GetPostsByUniversity)
 		posts.GET("/:id/replies", controllers.GetPostReplies)
