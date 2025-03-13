@@ -212,14 +212,14 @@ func CheckUsernameAvailability(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"available": false,
 			"valid":     true,
-			"message":   "Username is already taken",
+			"message":   "Bu kullanıcı adı daha önce adı alınmış",
 		})
 	} else {
 		// Username is available
 		c.JSON(http.StatusOK, gin.H{
 			"available": true,
 			"valid":     true,
-			"message":   "Username is available",
+			"message":   "Kullanıcı adı uygun",
 		})
 	}
 }

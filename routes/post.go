@@ -13,7 +13,7 @@ func PostRoutes(rg *gin.RouterGroup) {
 		posts.GET("/:id", controllers.GetPost)
 		posts.GET("/university/:universityId", controllers.GetPostsByUniversity)
 		posts.GET("/:id/replies", controllers.GetPostReplies)
-		posts.POST("/", middleware.Auth(0), controllers.CreatePost)
+		posts.POST("", middleware.Auth(0), controllers.CreatePost)
 		posts.DELETE("/:id", middleware.Auth(0), controllers.DeletePost)
 	}
 	users := rg.Group("/users")
