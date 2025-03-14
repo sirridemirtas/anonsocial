@@ -55,6 +55,7 @@ Base URL: `/api/v1`
 - `DELETE /users/:id` - Delete user (requires admin)
 - `GET /auth/check-username/:username` - Check username
 - `GET /users/:username/posts` - Get posts by user
+- `PUT /users/privacy` - (requires auth. isPrivate: true|false)
 
 ### Posts
 

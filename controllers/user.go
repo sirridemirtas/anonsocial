@@ -223,3 +223,53 @@ func CheckUsernameAvailability(c *gin.Context) {
 		})
 	}
 }
+
+// UpdateUserPrivacy updates the isPrivate field for the authenticated user
+func UpdateUserPrivacy(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Get username from token that was set by the Auth middleware
+	username := c.GetString("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username not found in token"})
+		return
+	}
+
+	var input struct {
+		IsPrivate bool `json:"isPrivate"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"isPrivate": input.IsPrivate,
+		},
+	}
+
+	// Use collation option for case-insensitive search
+	opts := options.Update().SetCollation(&options.Collation{
+		Locale:   "en",
+		Strength: 2, // Case-insensitive comparison
+	})
+
+	result, err := userCollection.UpdateOne(ctx, bson.M{"username": username}, update, opts)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":   "Privacy setting updated successfully",
+		"isPrivate": input.IsPrivate,
+	})
+}
