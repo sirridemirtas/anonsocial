@@ -82,7 +82,7 @@ func GetUser(c *gin.Context) {
 
 	username := c.Param("username")
 	if username == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Username parameter is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kullanıcı adı parametresi zorunludur"}) // Username parameter is required
 		return
 	}
 
@@ -101,7 +101,7 @@ func GetUser(c *gin.Context) {
 	var user models.User
 	err := userCollection.FindOne(ctx, bson.M{"username": username}, opts).Decode(&user)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Kullanıcı bulunamadı"}) // User not found
 		return
 	}
 
@@ -114,7 +114,7 @@ func UpdateUser(c *gin.Context) {
 
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz ID"}) // Invalid ID
 		return
 	}
 
@@ -140,11 +140,11 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	if result.MatchedCount == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Kullanıcı bulunamadı"}) // User not found
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Kullanıcı güncellendi"}) // User updated
 }
 
 func DeleteUser(c *gin.Context) {
@@ -164,11 +164,11 @@ func DeleteUser(c *gin.Context) {
 	}
 
 	if result.DeletedCount == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Kullanıcı bulunamadı"}) // User not found
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Kullanıcı silindi"}) // User deleted
 }
 
 func CheckUsernameAvailability(c *gin.Context) {
@@ -177,7 +177,7 @@ func CheckUsernameAvailability(c *gin.Context) {
 
 	username := c.Param("username")
 	if username == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Username parameter is required"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kullanıcı adı parametresi zorunludur"}) // Username parameter is required
 		return
 	}
 
@@ -212,14 +212,14 @@ func CheckUsernameAvailability(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"available": false,
 			"valid":     true,
-			"message":   "Bu kullanıcı adı daha önce adı alınmış",
+			"message":   "Bu kullanıcı adı daha önce alınmış", // This username is already taken
 		})
 	} else {
 		// Username is available
 		c.JSON(http.StatusOK, gin.H{
 			"available": true,
 			"valid":     true,
-			"message":   "Kullanıcı adı uygun",
+			"message":   "Kullanıcı adı uygun", // Username is available
 		})
 	}
 }
@@ -232,7 +232,7 @@ func UpdateUserPrivacy(c *gin.Context) {
 	// Get username from token that was set by the Auth middleware
 	username := c.GetString("username")
 	if username == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Username not found in token"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Token içinde kullanıcı adı bulunamadı"}) // Username not found in token
 		return
 	}
 
@@ -264,12 +264,12 @@ func UpdateUserPrivacy(c *gin.Context) {
 	}
 
 	if result.MatchedCount == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Kullanıcı bulunamadı"}) // User not found
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":   "Privacy setting updated successfully",
+		"message":   "Kullanıcı gizlilik ayarı güncellendi", // User privacy setting updated
 		"isPrivate": input.IsPrivate,
 	})
 }

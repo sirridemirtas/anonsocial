@@ -20,7 +20,7 @@ func Auth(requiredRole int) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cookie, err := c.Cookie("token")
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authentication required"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Kimlik doğrulama gerekiyor"}) // Authentication required
 			c.Abort()
 			return
 		}
@@ -30,14 +30,14 @@ func Auth(requiredRole int) gin.HandlerFunc {
 		})
 
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Geçersiz token"}) // Invalid token
 			c.Abort()
 			return
 		}
 
 		claims, ok := token.Claims.(*Claims)
 		if !ok || claims.Role < requiredRole {
-			c.JSON(http.StatusForbidden, gin.H{"error": "Insufficient permissions"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "Yetkiniz yok"}) // Insufficient permissions
 			c.Abort()
 			return
 		}

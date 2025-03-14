@@ -46,7 +46,7 @@ func CreatePost(c *gin.Context) {
 		// Check if this is a reply to a post
 		replyToID, err := primitive.ObjectIDFromHex(input.ReplyTo)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reply post ID"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz cevap gönderi kimliği"}) // Invalid reply post ID
 			return
 		}
 
@@ -54,12 +54,12 @@ func CreatePost(c *gin.Context) {
 		var parentPost models.Post
 		err = postCollection.FindOne(ctx, bson.M{"_id": replyToID}).Decode(&parentPost)
 		if err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Parent post not found"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Cevaplamak istediğiniz gönderi bulunamadı"}) // Parent post not found
 			return
 		}
 
 		if parentPost.ReplyTo != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Cannot reply to a reply"})
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Bir cevaba cevap veremezsiniz"}) // Cannot reply to a reply
 			return
 		}
 
@@ -105,14 +105,14 @@ func GetPost(c *gin.Context) {
 
 	id, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz ID"}) // Invalid ID
 		return
 	}
 
 	var post models.Post
 	err = postCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&post)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Post not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Gönderi bulunamadı"}) // Post not found
 		return
 	}
 
@@ -152,7 +152,7 @@ func GetPostReplies(c *gin.Context) {
 
 	postId, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz ID"}) // Invalid ID
 		return
 	}
 
@@ -179,7 +179,7 @@ func DeletePost(c *gin.Context) {
 
 	postId, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz ID"}) // Invalid ID
 		return
 	}
 
@@ -193,7 +193,7 @@ func DeletePost(c *gin.Context) {
 	}
 
 	if post.Username != username && c.GetInt("userRole") != 1 {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Not authorized to delete this post"})
+		c.JSON(http.StatusForbidden, gin.H{"error": "Bu gönderiyi silme izniniz yok"}) // Not authorized to delete this post
 		return
 	}
 
@@ -210,7 +210,7 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Post and its replies deleted successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "Gönderi ve cevapları silindi"}) // Post and its replies deleted successfully
 }
 
 func GetPostsByUser(c *gin.Context) {

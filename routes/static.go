@@ -11,13 +11,13 @@ import (
 func StaticRoutes(router *gin.Engine) {
 	router.NoRoute(func(c *gin.Context) {
 		if c.Request.Method != http.MethodGet {
-			c.String(http.StatusMethodNotAllowed, "405 method not allowed")
+			c.JSON(http.StatusMethodNotAllowed, gin.H{"error": "405 Method Not Allowed (Kabul Edilmeyen Metot: " + c.Request.Method + ")"})
 			return
 		}
 
 		path := c.Request.URL.Path
 		if strings.HasPrefix(path, "/api") {
-			c.String(http.StatusNotFound, "404 API endpoint not found")
+			c.JSON(http.StatusNotFound, gin.H{"error": "404 Not Found (API Erişim Noktası Bulunamadı)"})
 			return
 		}
 
@@ -57,6 +57,6 @@ func StaticRoutes(router *gin.Engine) {
 			return
 		}
 
-		c.String(http.StatusNotFound, "404 page not found")
+		c.JSON(http.StatusNotFound, gin.H{"error": "404 Not Found (Sayfa Bulunamadı)"})
 	})
 }
