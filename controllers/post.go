@@ -6,6 +6,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt"
+	"github.com/sirridemirtas/anonsocial/config"
+	"github.com/sirridemirtas/anonsocial/middleware"
 	"github.com/sirridemirtas/anonsocial/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -120,8 +123,25 @@ func GetPost(c *gin.Context) {
 		return
 	}
 
-	// Get current user's username from context (set by Auth middleware if user is logged in)
+	// Get username from context (if auth middleware has been applied)
 	username := c.GetString("username")
+
+	// If no username in context, try to extract it from the token if available
+	if username == "" {
+		cookie, err := c.Cookie("token")
+		if err == nil {
+			// Token exists, try to parse it
+			token, err := jwt.ParseWithClaims(cookie, &middleware.Claims{}, func(token *jwt.Token) (interface{}, error) {
+				return []byte(config.AppConfig.JWTSecret), nil
+			})
+
+			if err == nil && token.Valid {
+				if claims, ok := token.Claims.(*middleware.Claims); ok {
+					username = claims.Username
+				}
+			}
+		}
+	}
 
 	// Convert to response format with reaction counts
 	response := post.ToResponse(username)
