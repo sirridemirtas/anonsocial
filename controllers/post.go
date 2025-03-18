@@ -24,7 +24,7 @@ func CreatePost(c *gin.Context) {
 	defer cancel()
 
 	var input struct {
-		Content string `json:"content" binding:"required,max=300"`
+		Content string `json:"content" binding:"required,max=500"`
 		ReplyTo string `json:"replyTo,omitempty"`
 	}
 

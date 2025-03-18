@@ -54,19 +54,27 @@ Base URL: `/api/v1`
 - `PUT /users/:id` - Update user (requires auth)
 - `DELETE /users/:id` - Delete user (requires admin)
 - `GET /auth/check-username/:username` - Check username
-- `GET /users/:username/posts` - Get posts by user
 - `PUT /users/privacy` - (requires auth. isPrivate: true|false)
+
+### Feeds
+
+- `GET /posts` - Get all posts (home feed)
+- `GET /users/:username/posts` - Get posts by user (user feed)
+- `GET /posts/:id/replies` - Get post replies (post feed)
+- `GET /posts/university/:universityId` - Get posts by university (university feed)
 
 ### Posts
 
-- `GET /posts` - Get all posts
-- `GET /posts/:id` - Get post by ID
-- `GET /posts/university/:universityId` - Get posts by university
-- `GET /posts/:id/replies` - Get post replies
+- `GET /posts/:id` - Get post
 - `POST /posts` - Create new post (requires auth)
 - `DELETE /posts/:id` - Delete post (requires auth)
 
 ### Replies
 
-- `GET /posts/:id/replies` - Get replies by post
 - `POST /posts/:id/replies` - Create reply (requires auth)
+- `DELETE /posts/:id` - Delete post(reply) (requires auth)
+
+### Reactions
+
+- `POST /posts/:id/like` - Like post (requires auth)
+- `POST /posts/:id/dislike` - Dislike post (requires auth)
