@@ -18,7 +18,7 @@ const (
 	MaxPageSize     = 50
 )
 
-// GetFeedPosts returns posts without pagination metadata
+// GetFeedPosts returns posts with reaction counts
 func GetFeedPosts(c *gin.Context) {
 	pageNum, pageSize, err := getPaginationParams(c)
 	if err != nil {
@@ -48,10 +48,19 @@ func GetFeedPosts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, posts)
+	// Get current user's username
+	username := c.GetString("username")
+
+	// Transform posts to include reaction counts
+	var postResponses []models.PostResponse
+	for _, post := range posts {
+		postResponses = append(postResponses, post.ToResponse(username))
+	}
+
+	c.JSON(http.StatusOK, postResponses)
 }
 
-// GetFeedPostReplies returns replies without pagination metadata
+// GetFeedPostReplies returns replies with reaction counts
 func GetFeedPostReplies(c *gin.Context) {
 	pageNum, pageSize, err := getPaginationParams(c)
 	if err != nil {
@@ -87,10 +96,19 @@ func GetFeedPostReplies(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, replies)
+	// Get current user's username
+	username := c.GetString("username")
+
+	// Transform replies to include reaction counts
+	var replyResponses []models.PostResponse
+	for _, reply := range replies {
+		replyResponses = append(replyResponses, reply.ToResponse(username))
+	}
+
+	c.JSON(http.StatusOK, replyResponses)
 }
 
-// GetFeedUserPosts returns a user's posts without pagination metadata
+// GetFeedUserPosts returns a user's posts with reaction counts
 func GetFeedUserPosts(c *gin.Context) {
 	pageNum, pageSize, err := getPaginationParams(c)
 	if err != nil {
@@ -125,10 +143,19 @@ func GetFeedUserPosts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, posts)
+	// Get current user's username
+	currentUsername := c.GetString("username")
+
+	// Transform posts to include reaction counts
+	var postResponses []models.PostResponse
+	for _, post := range posts {
+		postResponses = append(postResponses, post.ToResponse(currentUsername))
+	}
+
+	c.JSON(http.StatusOK, postResponses)
 }
 
-// GetFeedUniversityPosts returns university posts without pagination metadata
+// GetFeedUniversityPosts returns university posts with reaction counts
 func GetFeedUniversityPosts(c *gin.Context) {
 	pageNum, pageSize, err := getPaginationParams(c)
 	if err != nil {
@@ -163,7 +190,16 @@ func GetFeedUniversityPosts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, posts)
+	// Get current user's username
+	username := c.GetString("username")
+
+	// Transform posts to include reaction counts
+	var postResponses []models.PostResponse
+	for _, post := range posts {
+		postResponses = append(postResponses, post.ToResponse(username))
+	}
+
+	c.JSON(http.StatusOK, postResponses)
 }
 
 // Helper function to get pagination parameters from the request

@@ -12,5 +12,9 @@ func PostRoutes(rg *gin.RouterGroup) {
 		posts.GET("/:id", controllers.GetPost)
 		posts.POST("", middleware.Auth(0), controllers.CreatePost)
 		posts.DELETE("/:id", middleware.Auth(0), controllers.DeletePost)
+
+		// reaction endpoints
+		posts.POST("/:id/like", middleware.Auth(0), controllers.LikePost)
+		posts.POST("/:id/dislike", middleware.Auth(0), controllers.DislikePost)
 	}
 }

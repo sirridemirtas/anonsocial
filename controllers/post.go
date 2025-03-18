@@ -40,6 +40,10 @@ func CreatePost(c *gin.Context) {
 		Username:  username,
 		Content:   input.Content,
 		CreatedAt: time.Now(),
+		Reactions: models.Reactions{
+			Likes:    []string{},
+			Dislikes: []string{},
+		},
 	}
 
 	if input.ReplyTo != "" {
@@ -116,7 +120,13 @@ func GetPost(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, post)
+	// Get current user's username from context (set by Auth middleware if user is logged in)
+	username := c.GetString("username")
+
+	// Convert to response format with reaction counts
+	response := post.ToResponse(username)
+
+	c.JSON(http.StatusOK, response)
 }
 
 func GetPostsByUniversity(c *gin.Context) {
@@ -238,4 +248,84 @@ func GetPostsByUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, posts)
+}
+
+// LikePost handles adding a like to a post
+func LikePost(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	postID, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz gönderi kimliği"}) // Invalid post ID
+		return
+	}
+
+	username := c.GetString("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kullanıcı adı bulunamadı"}) // Username not found
+		return
+	}
+
+	// Find the post first to check if it exists
+	var post models.Post
+	err = postCollection.FindOne(ctx, bson.M{"_id": postID}).Decode(&post)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Gönderi bulunamadı"}) // Post not found
+		return
+	}
+
+	// Add username to likes and remove from dislikes if present
+	update := bson.M{
+		"$addToSet": bson.M{"reactions.likes": username},
+		"$pull":     bson.M{"reactions.dislikes": username},
+	}
+
+	_, err = postCollection.UpdateOne(ctx, bson.M{"_id": postID}, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Gönderi beğenildi"}) // Post liked
+}
+
+// DislikePost handles adding a dislike to a post
+func DislikePost(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	postID, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz gönderi kimliği"}) // Invalid post ID
+		return
+	}
+
+	username := c.GetString("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kullanıcı adı bulunamadı"}) // Username not found
+		return
+	}
+
+	// Find the post first to check if it exists
+	var post models.Post
+	err = postCollection.FindOne(ctx, bson.M{"_id": postID}).Decode(&post)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Gönderi bulunamadı"}) // Post not found
+		return
+	}
+
+	// Add username to dislikes and remove from likes if present
+	update := bson.M{
+		"$addToSet": bson.M{"reactions.dislikes": username},
+		"$pull":     bson.M{"reactions.likes": username},
+	}
+
+	_, err = postCollection.UpdateOne(ctx, bson.M{"_id": postID}, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Gönderi beğenilmedi"}) // Post disliked
 }
