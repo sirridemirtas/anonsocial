@@ -349,3 +349,81 @@ func DislikePost(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Gönderi beğenilmedi"}) // Post disliked
 }
+
+// RemoveLikePost handles removing a like from a post
+func RemoveLikePost(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	postID, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz gönderi kimliği"}) // Invalid post ID
+		return
+	}
+
+	username := c.GetString("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kullanıcı adı bulunamadı"}) // Username not found
+		return
+	}
+
+	// Find the post first to check if it exists
+	var post models.Post
+	err = postCollection.FindOne(ctx, bson.M{"_id": postID}).Decode(&post)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Gönderi bulunamadı"}) // Post not found
+		return
+	}
+
+	// Remove username from likes if present
+	update := bson.M{
+		"$pull": bson.M{"reactions.likes": username},
+	}
+
+	_, err = postCollection.UpdateOne(ctx, bson.M{"_id": postID}, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Beğeni kaldırıldı"}) // Like removed
+}
+
+// RemoveDislikePost handles removing a dislike from a post
+func RemoveDislikePost(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	postID, err := primitive.ObjectIDFromHex(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz gönderi kimliği"}) // Invalid post ID
+		return
+	}
+
+	username := c.GetString("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kullanıcı adı bulunamadı"}) // Username not found
+		return
+	}
+
+	// Find the post first to check if it exists
+	var post models.Post
+	err = postCollection.FindOne(ctx, bson.M{"_id": postID}).Decode(&post)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Gönderi bulunamadı"}) // Post not found
+		return
+	}
+
+	// Remove username from dislikes if present
+	update := bson.M{
+		"$pull": bson.M{"reactions.dislikes": username},
+	}
+
+	_, err = postCollection.UpdateOne(ctx, bson.M{"_id": postID}, update)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Beğenmeme kaldırıldı"}) // Dislike removed
+}

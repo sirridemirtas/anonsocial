@@ -78,3 +78,6 @@ Base URL: `/api/v1`
 
 - `POST /posts/:id/like` - Like post (requires auth)
 - `POST /posts/:id/dislike` - Dislike post (requires auth)
+
+- `POST /posts/:id/unlike` - Unlike post (requires auth)
+- `POST /posts/:id/undislike` - Undislike post (requires auth)
