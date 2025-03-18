@@ -85,9 +85,13 @@ func CreatePost(c *gin.Context) {
 	c.JSON(http.StatusCreated, post)
 }
 
+// GetPosts needs to be updated to include reaction info
 func GetPosts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	// Get username from context or token
+	username := getUsernameFromRequest(c)
 
 	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
 	cursor, err := postCollection.Find(ctx, bson.M{"replyTo": nil}, opts)
@@ -103,7 +107,13 @@ func GetPosts(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, posts)
+	// Convert posts to response format with reaction info
+	var postResponses []models.PostResponse
+	for _, post := range posts {
+		postResponses = append(postResponses, post.ToResponse(username))
+	}
+
+	c.JSON(http.StatusOK, postResponses)
 }
 
 func GetPost(c *gin.Context) {
@@ -149,9 +159,13 @@ func GetPost(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// GetPostsByUniversity needs to be updated to include reaction info
 func GetPostsByUniversity(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	// Get username from context or token
+	username := getUsernameFromRequest(c)
 
 	universityId := c.Param("universityId")
 	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
@@ -173,12 +187,22 @@ func GetPostsByUniversity(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, posts)
+	// Convert posts to response format with reaction info
+	var postResponses []models.PostResponse
+	for _, post := range posts {
+		postResponses = append(postResponses, post.ToResponse(username))
+	}
+
+	c.JSON(http.StatusOK, postResponses)
 }
 
+// GetPostReplies needs to be updated to include reaction info
 func GetPostReplies(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	// Get username from context or token
+	username := getUsernameFromRequest(c)
 
 	postId, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
@@ -200,7 +224,13 @@ func GetPostReplies(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, replies)
+	// Convert replies to response format with reaction info
+	var replyResponses []models.PostResponse
+	for _, reply := range replies {
+		replyResponses = append(replyResponses, reply.ToResponse(username))
+	}
+
+	c.JSON(http.StatusOK, replyResponses)
 }
 
 func DeletePost(c *gin.Context) {
@@ -243,15 +273,19 @@ func DeletePost(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Gönderi ve cevapları silindi"}) // Post and its replies deleted successfully
 }
 
+// GetPostsByUser needs to be updated to include reaction info
 func GetPostsByUser(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	username := c.Param("username")
+	// Get username from context or token
+	username := getUsernameFromRequest(c)
+
+	targetUsername := c.Param("username")
 	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
 
 	cursor, err := postCollection.Find(ctx, bson.M{
-		"username": username,
+		"username": targetUsername,
 		"replyTo":  nil,
 	}, opts)
 
@@ -267,7 +301,13 @@ func GetPostsByUser(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, posts)
+	// Convert posts to response format with reaction info
+	var postResponses []models.PostResponse
+	for _, post := range posts {
+		postResponses = append(postResponses, post.ToResponse(username))
+	}
+
+	c.JSON(http.StatusOK, postResponses)
 }
 
 // LikePost handles adding a like to a post
@@ -426,4 +466,29 @@ func RemoveDislikePost(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Beğenmeme kaldırıldı"}) // Dislike removed
+}
+
+// Add a helper function to extract username from request context or token
+func getUsernameFromRequest(c *gin.Context) string {
+	// Get username from context (if auth middleware has been applied)
+	username := c.GetString("username")
+
+	// If no username in context, try to extract it from the token if available
+	if username == "" {
+		cookie, err := c.Cookie("token")
+		if err == nil {
+			// Token exists, try to parse it
+			token, err := jwt.ParseWithClaims(cookie, &middleware.Claims{}, func(token *jwt.Token) (interface{}, error) {
+				return []byte(config.AppConfig.JWTSecret), nil
+			})
+
+			if err == nil && token.Valid {
+				if claims, ok := token.Claims.(*middleware.Claims); ok {
+					username = claims.Username
+				}
+			}
+		}
+	}
+
+	return username
 }

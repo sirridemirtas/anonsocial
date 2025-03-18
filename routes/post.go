@@ -17,7 +17,7 @@ func PostRoutes(rg *gin.RouterGroup) {
 		posts.POST("/:id/like", middleware.Auth(0), controllers.LikePost)
 		posts.POST("/:id/dislike", middleware.Auth(0), controllers.DislikePost)
 
-		// removing reactions
+		// removing reactions with PUT method
 		posts.POST("/:id/unlike", middleware.Auth(0), controllers.RemoveLikePost)
 		posts.POST("/:id/undislike", middleware.Auth(0), controllers.RemoveDislikePost)
 	}

@@ -29,6 +29,9 @@ func GetFeedPosts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	// Get username for reaction status
+	username := getUsernameFromRequest(c)
+
 	opts := options.Find().
 		SetSort(bson.D{{Key: "createdAt", Value: -1}}).
 		SetSkip(int64((pageNum - 1) * pageSize)).
@@ -47,9 +50,6 @@ func GetFeedPosts(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	// Get current user's username
-	username := c.GetString("username")
 
 	// Transform posts to include reaction counts
 	var postResponses []models.PostResponse
@@ -70,6 +70,9 @@ func GetFeedPostReplies(c *gin.Context) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	// Get username for reaction status
+	username := getUsernameFromRequest(c)
 
 	postId, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
@@ -96,9 +99,6 @@ func GetFeedPostReplies(c *gin.Context) {
 		return
 	}
 
-	// Get current user's username
-	username := c.GetString("username")
-
 	// Transform replies to include reaction counts
 	var replyResponses []models.PostResponse
 	for _, reply := range replies {
@@ -119,7 +119,10 @@ func GetFeedUserPosts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	username := c.Param("username")
+	// Get username for reaction status
+	username := getUsernameFromRequest(c)
+
+	targetUsername := c.Param("username")
 
 	opts := options.Find().
 		SetSort(bson.D{{Key: "createdAt", Value: -1}}).
@@ -127,7 +130,7 @@ func GetFeedUserPosts(c *gin.Context) {
 		SetLimit(int64(pageSize))
 
 	cursor, err := postCollection.Find(ctx, bson.M{
-		"username": username,
+		"username": targetUsername,
 		"replyTo":  nil,
 	}, opts)
 	if err != nil {
@@ -143,13 +146,10 @@ func GetFeedUserPosts(c *gin.Context) {
 		return
 	}
 
-	// Get current user's username
-	currentUsername := c.GetString("username")
-
 	// Transform posts to include reaction counts
 	var postResponses []models.PostResponse
 	for _, post := range posts {
-		postResponses = append(postResponses, post.ToResponse(currentUsername))
+		postResponses = append(postResponses, post.ToResponse(username))
 	}
 
 	c.JSON(http.StatusOK, postResponses)
@@ -165,6 +165,9 @@ func GetFeedUniversityPosts(c *gin.Context) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
+	// Get username for reaction status
+	username := getUsernameFromRequest(c)
 
 	universityId := c.Param("universityId")
 
@@ -189,9 +192,6 @@ func GetFeedUniversityPosts(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	// Get current user's username
-	username := c.GetString("username")
 
 	// Transform posts to include reaction counts
 	var postResponses []models.PostResponse
