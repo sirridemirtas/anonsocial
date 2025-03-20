@@ -61,7 +61,8 @@ func GetConversation(c *gin.Context) {
 	// Create participant key for finding the conversation
 	participantKey := models.CreateParticipantKey(currentUser, targetUser)
 
-	// Find conversation using the participantKey
+	// Find conversation using the participantKey instead of using $all on participants array
+	// This ensures we consistently find the same conversation regardless of participant order
 	var conversation models.Conversation
 	err := conversationCollection.FindOne(ctx, bson.M{
 		"participantKey": participantKey,
@@ -82,21 +83,8 @@ func GetConversation(c *gin.Context) {
 		return
 	}
 
-	// Mark messages as read for current user
-	conversation.MarkAsRead(currentUser)
-
-	// Update the conversation in the database (to save the read status)
-	_, err = conversationCollection.UpdateOne(
-		ctx,
-		bson.M{"_id": conversation.ID},
-		bson.M{"$set": bson.M{"unreadCounts." + currentUser: 0}},
-	)
-
-	if err != nil {
-		// Log error but continue to return conversation
-		// The unread status will just not be persisted
-		// c.Logger().Error(err)
-	}
+	// REMOVED: No longer auto-marking messages as read when viewing a conversation
+	// Let the explicit /messages/:username/read endpoint handle this
 
 	c.JSON(http.StatusOK, conversation)
 }
