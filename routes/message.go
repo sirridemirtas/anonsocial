@@ -13,11 +13,17 @@ func MessageRoutes(rg *gin.RouterGroup) {
 	// Get conversation list for current user
 	messages.GET("", controllers.GetConversationList)
 
+	// Get total unread message count
+	messages.GET("/unread_count", controllers.GetTotalUnreadCount)
+
 	// Get conversation with specific user
 	messages.GET("/:username", controllers.GetConversation)
 
 	// Send message to specific user
 	messages.POST("/:username", controllers.SendMessage)
+
+	// Mark messages as read
+	messages.POST("/:username/read", controllers.MarkConversationAsRead)
 
 	// Delete conversation with specific user
 	messages.DELETE("/:username", controllers.DeleteConversation)

@@ -345,3 +345,118 @@ func GetConversationList(c *gin.Context) {
 
 	c.JSON(http.StatusOK, conversations)
 }
+
+// MarkConversationAsRead marks all messages in a conversation as read for the authenticated user
+func MarkConversationAsRead(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Get current authenticated user from context
+	currentUser := c.GetString("username")
+	if currentUser == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kullanıcı adı bulunamadı"})
+		return
+	}
+
+	// Get target user from URL parameter
+	targetUser := c.Param("username")
+
+	// Validate that current user is not messaging themselves
+	if currentUser == targetUser {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kendinize mesaj gönderemezsiniz"})
+		return
+	}
+
+	// Check if target user exists
+	var targetUserDoc models.User
+	err := userCollection.FindOne(ctx, bson.M{"username": targetUser}).Decode(&targetUserDoc)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Belirtilen kullanıcı bulunamadı"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Kullanıcı kontrolü sırasında bir hata oluştu"})
+		}
+		return
+	}
+
+	// Create participant key for finding the conversation
+	participantKey := models.CreateParticipantKey(currentUser, targetUser)
+
+	// Find conversation using the participantKey
+	var conversation models.Conversation
+	err = conversationCollection.FindOne(ctx, bson.M{
+		"participantKey": participantKey,
+	}).Decode(&conversation)
+
+	// If conversation doesn't exist, return success (nothing to mark as read)
+	if err == mongo.ErrNoDocuments {
+		c.JSON(http.StatusOK, gin.H{"message": "Okunacak mesaj bulunamadı"})
+		return
+	} else if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Check if current user has deleted this conversation
+	if conversation.IsDeletedBy(currentUser) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Bu görüşme silinmiş"})
+		return
+	}
+
+	// Update the conversation in the database by setting unread count to 0 for current user
+	_, err = conversationCollection.UpdateOne(
+		ctx,
+		bson.M{"_id": conversation.ID},
+		bson.M{"$set": bson.M{"unreadCounts." + currentUser: 0}},
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Mesajlar okundu olarak işaretlendi"})
+}
+
+// GetTotalUnreadCount gets the total number of unread messages for the authenticated user
+func GetTotalUnreadCount(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Get current authenticated user from context
+	currentUser := c.GetString("username")
+	if currentUser == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kullanıcı adı bulunamadı"})
+		return
+	}
+
+	// Find all conversations where current user is a participant and hasn't deleted the conversation
+	cursor, err := conversationCollection.Find(ctx, bson.M{
+		"participants": currentUser,
+		"deletedBy": bson.M{
+			"$ne": currentUser,
+		},
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var conversations []models.Conversation
+	if err = cursor.All(ctx, &conversations); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Sum up unread counts for the current user
+	totalUnread := 0
+	for _, conversation := range conversations {
+		totalUnread += conversation.UnreadCounts[currentUser]
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"unreadCount": totalUnread,
+	})
+}
