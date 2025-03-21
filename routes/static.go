@@ -39,6 +39,12 @@ func StaticRoutes(router *gin.Engine) {
 			return
 		}
 
+		// Redirect /messages/:username to static/messages.html
+		if strings.HasPrefix(path, "/messages/") {
+			c.File("./static/messages.html")
+			return
+		}
+
 		staticPath := "./static" + path
 		if _, err := os.Stat(staticPath); err == nil {
 			c.File(staticPath)
