@@ -18,7 +18,8 @@ func main() {
 
 	controllers.SetUserCollection(database.GetClient())
 	controllers.SetPostCollection(database.GetClient())
-	controllers.SetConversationCollection(database.GetClient()) // Initialize conversation collection
+	controllers.SetConversationCollection(database.GetClient())
+	controllers.SetNotificationCollection(database.GetClient()) // Add this line
 
 	router := gin.Default()
 	router.Use(middleware.Cors())
@@ -28,7 +29,8 @@ func main() {
 	routes.AuthRoutes(apiV1)
 	routes.PostRoutes(apiV1)
 	routes.FeedRoutes(apiV1)
-	routes.MessageRoutes(apiV1) // Add message routes
+	routes.MessageRoutes(apiV1)
+	routes.NotificationRoutes(apiV1) // Add this line
 	routes.StaticRoutes(router)
 
 	router.Run(":" + config.AppConfig.Port)

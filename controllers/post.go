@@ -71,6 +71,36 @@ func CreatePost(c *gin.Context) {
 		}
 
 		post.ReplyTo = &replyToID
+
+		// After saving the reply, create notifications
+		// 1. Notify the parent post owner about the reply
+		CreateOrUpdateReplyNotification(replyToID, parentPost.Username, parentPost.Content, username, false)
+
+		// 2. If this is not a direct reply to the parent post owner's post,
+		// also find other people who replied to notify them
+		if parentPost.Username != username {
+			// Find all unique users who replied to this post (excluding current user and post owner)
+			pipeline := []bson.M{
+				{"$match": bson.M{"replyTo": replyToID}},
+				{"$group": bson.M{"_id": "$username"}},
+			}
+
+			cursor, err := postCollection.Aggregate(ctx, pipeline)
+			if err == nil {
+				var results []struct {
+					Username string `bson:"_id"`
+				}
+				if err := cursor.All(ctx, &results); err == nil {
+					for _, result := range results {
+						if result.Username != username && result.Username != parentPost.Username {
+							// Notify other users who replied to this post
+							CreateOrUpdateReplyNotification(replyToID, result.Username, parentPost.Content, username, true)
+						}
+					}
+				}
+				cursor.Close(ctx)
+			}
+		}
 	} else {
 		post.UniversityID = universityID
 	}
@@ -347,6 +377,11 @@ func LikePost(c *gin.Context) {
 		return
 	}
 
+	// Create a notification for the post owner if it's not the same user
+	if post.Username != username {
+		CreateOrUpdateReactionNotification(postID, post.Username, post.Content, true)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Gönderi beğenildi"}) // Post liked
 }
 
@@ -385,6 +420,11 @@ func DislikePost(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
+	}
+
+	// Create a notification for the post owner if it's not the same user
+	if post.Username != username {
+		CreateOrUpdateReactionNotification(postID, post.Username, post.Content, false)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Gönderi beğenilmedi"}) // Post disliked
