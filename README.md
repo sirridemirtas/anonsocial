@@ -55,6 +55,8 @@ Base URL: `/api/v1`
 - `DELETE /users/:id` - Delete user (requires admin)
 - `GET /auth/check-username/:username` - Check username
 - `PUT /users/privacy` - (requires auth. isPrivate: true|false)
+- `GET /users/:username/avatar` - Get user's avatar (respects privacy settings)
+- `POST /users/:username/avatar` - Create or update user's avatar (requires auth, can only update own avatar)
 
 ### Feeds
 

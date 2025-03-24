@@ -14,6 +14,14 @@ var validate *validator.Validate
 func init() {
 	validate = validator.New()
 	validate.RegisterValidation("university", validateUniversity)
+	validate.RegisterValidation("hexcolor", validateHexColor)
+}
+
+// validateHexColor checks if the string is a valid hex color code (e.g., #FF34EA)
+func validateHexColor(fl validator.FieldLevel) bool {
+	hexColor := fl.Field().String()
+	match, _ := regexp.MatchString(`^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$`, hexColor)
+	return match
 }
 
 func validateUniversity(fl validator.FieldLevel) bool {
@@ -71,6 +79,28 @@ func ValidateUsername(username string) []string {
 	alphanumeric := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	if !alphanumeric.MatchString(username) {
 		errors = append(errors, "username must contain only letters and numbers")
+	}
+
+	return errors
+}
+
+// ValidateAvatar validates avatar data
+func ValidateAvatar(avatar interface{}) []string {
+	var errors []string
+	err := validate.Struct(avatar)
+
+	if err != nil {
+		for _, err := range err.(validator.ValidationErrors) {
+			field := strings.ToLower(err.Field())
+			switch err.Tag() {
+			case "required":
+				errors = append(errors, field+" is required")
+			case "hexcolor":
+				errors = append(errors, field+" must be a valid hex color code (e.g., #FF34EA)")
+			case "oneof":
+				errors = append(errors, field+" must be one of the allowed values: "+err.Param())
+			}
+		}
 	}
 
 	return errors
