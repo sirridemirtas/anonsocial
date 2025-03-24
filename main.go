@@ -25,9 +25,14 @@ func main() {
 	router.Use(middleware.Cors())
 
 	apiV1 := router.Group("/api/v1")
-	routes.UserRoutes(apiV1)
+
+	// Register routes in the correct order
+	// First register basic routes
 	routes.AuthRoutes(apiV1)
+	routes.UserRoutes(apiV1)
 	routes.PostRoutes(apiV1)
+
+	// Then register composite routes (like feed which might depend on posts)
 	routes.FeedRoutes(apiV1)
 	routes.MessageRoutes(apiV1)
 	routes.NotificationRoutes(apiV1) // Add this line

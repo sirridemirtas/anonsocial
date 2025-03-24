@@ -50,3 +50,46 @@ func Auth(requiredRole int) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// GetUsernameFromToken extracts username from token if valid
+func GetUsernameFromToken(cookie string) (string, bool) {
+	token, err := jwt.ParseWithClaims(cookie, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(config.AppConfig.JWTSecret), nil
+	})
+
+	if err != nil || !token.Valid {
+		return "", false
+	}
+
+	claims, ok := token.Claims.(*Claims)
+	if !ok {
+		return "", false
+	}
+
+	return claims.Username, true
+}
+
+// OptionalAuth middleware for endpoints that work with or without authentication
+func OptionalAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		cookie, err := c.Cookie("token")
+		if err != nil {
+			// No token, continue with empty username
+			c.Set("username", "")
+			c.Next()
+			return
+		}
+
+		username, ok := GetUsernameFromToken(cookie)
+		if !ok {
+			// Invalid token, continue with empty username
+			c.Set("username", "")
+			c.Next()
+			return
+		}
+
+		// Set username in context
+		c.Set("username", username)
+		c.Next()
+	}
+}

@@ -21,13 +21,14 @@ type ReactionCounts struct {
 }
 
 type Post struct {
-	ID           primitive.ObjectID  `bson:"_id,omitempty" json:"id,omitempty"`
-	Username     string              `bson:"username" json:"username"`
-	UniversityID string              `bson:"universityId" json:"universityId" validate:"required,university"`
-	Content      string              `bson:"content" json:"content" validate:"required,max=500"`
-	ReplyTo      *primitive.ObjectID `bson:"replyTo,omitempty" json:"replyTo,omitempty"`
-	CreatedAt    time.Time           `bson:"createdAt" json:"createdAt"`
-	Reactions    Reactions           `bson:"reactions" json:"-"` // Stored but not directly returned
+	ID            primitive.ObjectID  `bson:"_id,omitempty" json:"id,omitempty"`
+	Username      string              `bson:"username" json:"username"`
+	UniversityID  string              `bson:"universityId" json:"universityId" validate:"required,university"`
+	Content       string              `bson:"content" json:"content" validate:"required,max=500"`
+	ReplyTo       *primitive.ObjectID `bson:"replyTo,omitempty" json:"replyTo,omitempty"`
+	CreatedAt     time.Time           `bson:"createdAt" json:"createdAt"`
+	Reactions     Reactions           `bson:"reactions" json:"-"`     // Stored but not directly returned
+	UserIsPrivate bool                `bson:"userIsPrivate" json:"-"` // Internal field not to be exposed in JSON
 }
 
 // PostResponse is used for API responses, including reaction counts
@@ -43,13 +44,21 @@ type PostResponse struct {
 
 // ToResponse converts a Post to a PostResponse with reaction counts
 func (p *Post) ToResponse(username string) PostResponse {
+	// Create a copy of the post to sanitize
+	postCopy := *p
+
+	// Apply privacy settings to the username
+	if postCopy.UserIsPrivate && postCopy.Username != username {
+		postCopy.Username = "" // Hide username if user is private and requester is not the owner
+	}
+
 	return PostResponse{
-		ID:           p.ID,
-		Username:     p.Username,
-		UniversityID: p.UniversityID,
-		Content:      p.Content,
-		ReplyTo:      p.ReplyTo,
-		CreatedAt:    p.CreatedAt,
+		ID:           postCopy.ID,
+		Username:     postCopy.Username, // This will be empty if user is private and requester is not the owner
+		UniversityID: postCopy.UniversityID,
+		Content:      postCopy.Content,
+		ReplyTo:      postCopy.ReplyTo,
+		CreatedAt:    postCopy.CreatedAt,
 		Reactions: ReactionCounts{
 			LikeCount:    len(p.Reactions.Likes),
 			DislikeCount: len(p.Reactions.Dislikes),

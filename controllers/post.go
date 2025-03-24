@@ -13,7 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var postCollection *mongo.Collection
@@ -40,9 +39,10 @@ func CreatePost(c *gin.Context) {
 	universityID := c.GetString("universityId")
 
 	post := models.Post{
-		Username:  username,
-		Content:   input.Content,
-		CreatedAt: time.Now(),
+		Username:     username,
+		UniversityID: universityID, // Set universityId for ALL posts (including replies)
+		Content:      input.Content,
+		CreatedAt:    time.Now(),
 		Reactions: models.Reactions{
 			Likes:    []string{},
 			Dislikes: []string{},
@@ -58,17 +58,68 @@ func CreatePost(c *gin.Context) {
 		}
 
 		// Check if parent post exists and is not a reply itself
-		var parentPost models.Post
-		err = postCollection.FindOne(ctx, bson.M{"_id": replyToID}).Decode(&parentPost)
+		// We need to also get the privacy status of the post owner
+		pipeline := []bson.M{
+			{
+				"$match": bson.M{"_id": replyToID},
+			},
+			{
+				"$lookup": bson.M{
+					"from":         "users",
+					"localField":   "username",
+					"foreignField": "username",
+					"as":           "user",
+				},
+			},
+			{
+				"$addFields": bson.M{
+					"userIsPrivate": bson.M{
+						"$cond": bson.M{
+							"if": bson.M{"$gt": []interface{}{bson.M{"$size": "$user"}, 0}},
+							"then": bson.M{
+								"$toBool": bson.M{
+									"$arrayElemAt": []interface{}{"$user.isPrivate", 0},
+								},
+							},
+							"else": false,
+						},
+					},
+				},
+			},
+			{
+				"$project": bson.M{
+					"user": 0, // Remove the user array from output
+				},
+			},
+		}
+
+		cursor, err := postCollection.Aggregate(ctx, pipeline)
 		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		defer cursor.Close(ctx)
+
+		var parentPosts []models.Post
+		if err = cursor.All(ctx, &parentPosts); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+
+		if len(parentPosts) == 0 {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Cevaplamak istediğiniz gönderi bulunamadı"}) // Parent post not found
 			return
 		}
+
+		parentPost := parentPosts[0]
 
 		if parentPost.ReplyTo != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Bir cevaba cevap veremezsiniz"}) // Cannot reply to a reply
 			return
 		}
+
+		// Allow replies to private users' posts (we'll just hide their username in the UI)
+		// No need to block replies based on privacy
 
 		post.ReplyTo = &replyToID
 
@@ -101,8 +152,6 @@ func CreatePost(c *gin.Context) {
 				cursor.Close(ctx)
 			}
 		}
-	} else {
-		post.UniversityID = universityID
 	}
 
 	result, err := postCollection.InsertOne(ctx, post)
@@ -115,7 +164,7 @@ func CreatePost(c *gin.Context) {
 	c.JSON(http.StatusCreated, post)
 }
 
-// GetPosts needs to be updated to include reaction info
+// GetPosts needs to be updated to handle privacy
 func GetPosts(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -123,8 +172,46 @@ func GetPosts(c *gin.Context) {
 	// Get username from context or token
 	username := getUsernameFromRequest(c)
 
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
-	cursor, err := postCollection.Find(ctx, bson.M{"replyTo": nil}, opts)
+	// Create pipeline to join with users collection
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{"replyTo": nil}, // Only top-level posts
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "users",
+				"localField":   "username",
+				"foreignField": "username",
+				"as":           "user",
+			},
+		},
+		{
+			"$addFields": bson.M{
+				"userIsPrivate": bson.M{
+					"$cond": bson.M{
+						"if": bson.M{"$gt": []interface{}{bson.M{"$size": "$user"}, 0}},
+						// Use $toBool to convert any type to boolean
+						"then": bson.M{
+							"$toBool": bson.M{
+								"$arrayElemAt": []interface{}{"$user.isPrivate", 0},
+							},
+						},
+						"else": false,
+					},
+				},
+			},
+		},
+		{
+			"$project": bson.M{
+				"user": 0, // Remove the user array from output
+			},
+		},
+		{
+			"$sort": bson.M{"createdAt": -1}, // Sort by createdAt descending
+		},
+	}
+
+	cursor, err := postCollection.Aggregate(ctx, pipeline)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -137,9 +224,10 @@ func GetPosts(c *gin.Context) {
 		return
 	}
 
-	// Convert posts to response format with reaction info
+	// Convert posts to response format with reaction info and privacy handling
 	var postResponses []models.PostResponse
 	for _, post := range posts {
+		// Include all posts, but sanitize usernames for private users
 		postResponses = append(postResponses, post.ToResponse(username))
 	}
 
@@ -150,40 +238,74 @@ func GetPost(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	id, err := primitive.ObjectIDFromHex(c.Param("id"))
+	postID, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz ID"}) // Invalid ID
 		return
 	}
 
-	var post models.Post
-	err = postCollection.FindOne(ctx, bson.M{"_id": id}).Decode(&post)
+	// Get username from context or token
+	username := getUsernameFromRequest(c)
+
+	// Create a pipeline to join with users collection to get privacy status
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{"_id": postID},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "users",
+				"localField":   "username",
+				"foreignField": "username",
+				"as":           "user",
+			},
+		},
+		{
+			"$addFields": bson.M{
+				"userIsPrivate": bson.M{
+					"$cond": bson.M{
+						"if": bson.M{"$gt": []interface{}{bson.M{"$size": "$user"}, 0}},
+						// Use $toBool to convert any type to boolean
+						"then": bson.M{
+							"$toBool": bson.M{
+								"$arrayElemAt": []interface{}{"$user.isPrivate", 0},
+							},
+						},
+						"else": false,
+					},
+				},
+			},
+		},
+		{
+			"$project": bson.M{
+				"user": 0, // Remove the user array from output
+			},
+		},
+	}
+
+	cursor, err := postCollection.Aggregate(ctx, pipeline)
 	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer cursor.Close(ctx)
+
+	var posts []models.Post
+	if err = cursor.All(ctx, &posts); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if len(posts) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Gönderi bulunamadı"}) // Post not found
 		return
 	}
 
-	// Get username from context (if auth middleware has been applied)
-	username := c.GetString("username")
-
-	// If no username in context, try to extract it from the token if available
-	if username == "" {
-		cookie, err := c.Cookie("token")
-		if err == nil {
-			// Token exists, try to parse it
-			token, err := jwt.ParseWithClaims(cookie, &middleware.Claims{}, func(token *jwt.Token) (interface{}, error) {
-				return []byte(config.AppConfig.JWTSecret), nil
-			})
-
-			if err == nil && token.Valid {
-				if claims, ok := token.Claims.(*middleware.Claims); ok {
-					username = claims.Username
-				}
-			}
-		}
-	}
+	post := posts[0]
 
 	// Convert to response format with reaction counts
+	// This will automatically hide the username if the user is private
+	// and the requesting user is not the post owner
 	response := post.ToResponse(username)
 
 	c.JSON(http.StatusOK, response)
@@ -198,13 +320,54 @@ func GetPostsByUniversity(c *gin.Context) {
 	username := getUsernameFromRequest(c)
 
 	universityId := c.Param("universityId")
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+	if universityId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Üniversite ID parametresi gerekli"})
+		return
+	}
 
-	cursor, err := postCollection.Find(ctx, bson.M{
-		"universityId": universityId,
-		"replyTo":      nil,
-	}, opts)
+	// Get all posts from the university and join with users to apply privacy
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"universityId": universityId,
+				"replyTo":      nil, // Only include top-level posts, not replies
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "users",
+				"localField":   "username",
+				"foreignField": "username",
+				"as":           "user",
+			},
+		},
+		{
+			"$addFields": bson.M{
+				"userIsPrivate": bson.M{
+					"$cond": bson.M{
+						"if": bson.M{"$gt": []interface{}{bson.M{"$size": "$user"}, 0}},
+						// Use $toBool to convert any type to boolean
+						"then": bson.M{
+							"$toBool": bson.M{
+								"$arrayElemAt": []interface{}{"$user.isPrivate", 0},
+							},
+						},
+						"else": false,
+					},
+				},
+			},
+		},
+		{
+			"$project": bson.M{
+				"user": 0, // Remove the user array from output
+			},
+		},
+		{
+			"$sort": bson.M{"createdAt": -1}, // Sort by createdAt descending
+		},
+	}
 
+	cursor, err := postCollection.Aggregate(ctx, pipeline)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -217,9 +380,10 @@ func GetPostsByUniversity(c *gin.Context) {
 		return
 	}
 
-	// Convert posts to response format with reaction info
+	// Convert posts to response format with reaction info and privacy handling
 	var postResponses []models.PostResponse
 	for _, post := range posts {
+		// Include all posts, but sanitize usernames for private users
 		postResponses = append(postResponses, post.ToResponse(username))
 	}
 
@@ -231,32 +395,126 @@ func GetPostReplies(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// Get username from context or token
-	username := getUsernameFromRequest(c)
-
-	postId, err := primitive.ObjectIDFromHex(c.Param("id"))
+	postID, err := primitive.ObjectIDFromHex(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz ID"}) // Invalid ID
 		return
 	}
 
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: 1}})
-	cursor, err := postCollection.Find(ctx, bson.M{"replyTo": postId}, opts)
+	// Get username from context or token
+	username := getUsernameFromRequest(c)
+
+	// First check if parent post exists and if the owner is private
+	// Create a pipeline to join with users collection to get privacy status
+	pipelineParent := []bson.M{
+		{
+			"$match": bson.M{"_id": postID},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "users",
+				"localField":   "username",
+				"foreignField": "username",
+				"as":           "user",
+			},
+		},
+		{
+			"$addFields": bson.M{
+				"userIsPrivate": bson.M{
+					"$cond": bson.M{
+						"if": bson.M{"$gt": []interface{}{bson.M{"$size": "$user"}, 0}},
+						// Use $toBool to convert any type to boolean
+						"then": bson.M{
+							"$toBool": bson.M{
+								"$arrayElemAt": []interface{}{"$user.isPrivate", 0},
+							},
+						},
+						"else": false,
+					},
+				},
+			},
+		},
+		{
+			"$project": bson.M{
+				"user": 0, // Remove the user array from output
+			},
+		},
+	}
+
+	cursorParent, err := postCollection.Aggregate(ctx, pipelineParent)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	defer cursor.Close(ctx)
+	defer cursorParent.Close(ctx)
 
-	var replies []models.Post
-	if err = cursor.All(ctx, &replies); err != nil {
+	var parentPosts []models.Post
+	if err = cursorParent.All(ctx, &parentPosts); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Convert replies to response format with reaction info
+	if len(parentPosts) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Gönderi bulunamadı"}) // Post not found
+		return
+	}
+
+	// Now get all replies and join with users to get their privacy status
+	pipelineReplies := []bson.M{
+		{
+			"$match": bson.M{"replyTo": postID},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "users",
+				"localField":   "username",
+				"foreignField": "username",
+				"as":           "user",
+			},
+		},
+		{
+			"$addFields": bson.M{
+				"userIsPrivate": bson.M{
+					"$cond": bson.M{
+						"if": bson.M{"$gt": []interface{}{bson.M{"$size": "$user"}, 0}},
+						// Use $toBool to convert any type to boolean
+						"then": bson.M{
+							"$toBool": bson.M{
+								"$arrayElemAt": []interface{}{"$user.isPrivate", 0},
+							},
+						},
+						"else": false,
+					},
+				},
+			},
+		},
+		{
+			"$project": bson.M{
+				"user": 0, // Remove the user array from output
+			},
+		},
+		{
+			"$sort": bson.M{"createdAt": 1}, // Sort by createdAt ascending
+		},
+	}
+
+	cursorReplies, err := postCollection.Aggregate(ctx, pipelineReplies)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer cursorReplies.Close(ctx)
+
+	var replies []models.Post
+	if err = cursorReplies.All(ctx, &replies); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Convert replies to response format with reaction info and privacy handling
 	var replyResponses []models.PostResponse
 	for _, reply := range replies {
+		// This will handle username privacy - if user is private and requester is not the owner, username will be empty
 		replyResponses = append(replyResponses, reply.ToResponse(username))
 	}
 
@@ -303,22 +561,77 @@ func DeletePost(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Gönderi ve cevapları silindi"}) // Post and its replies deleted successfully
 }
 
-// GetPostsByUser needs to be updated to include reaction info
+// GetPostsByUser retrieves all posts by a specific user
 func GetPostsByUser(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	// Get username from context or token
-	username := getUsernameFromRequest(c)
+	requestingUsername := getUsernameFromRequest(c)
 
 	targetUsername := c.Param("username")
-	opts := options.Find().SetSort(bson.D{{Key: "createdAt", Value: -1}})
+	if targetUsername == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kullanıcı adı parametresi gerekli"})
+		return
+	}
 
-	cursor, err := postCollection.Find(ctx, bson.M{
-		"username": targetUsername,
-		"replyTo":  nil,
-	}, opts)
+	// First check if user exists and is private
+	var user models.User
+	err := userCollection.FindOne(ctx, bson.M{"username": targetUsername}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Kullanıcı bulunamadı"})
+		return
+	}
 
+	// If user is private and requester is not the same user, return empty array
+	if user.IsPrivate && targetUsername != requestingUsername {
+		c.JSON(http.StatusOK, []models.PostResponse{}) // Empty response
+		return
+	}
+
+	// Now get all posts from the user and apply privacy settings
+	pipeline := []bson.M{
+		{
+			"$match": bson.M{
+				"username": targetUsername,
+				"replyTo":  nil, // Only include top-level posts, not replies
+			},
+		},
+		{
+			"$lookup": bson.M{
+				"from":         "users",
+				"localField":   "username",
+				"foreignField": "username",
+				"as":           "user",
+			},
+		},
+		{
+			"$addFields": bson.M{
+				"userIsPrivate": bson.M{
+					"$cond": bson.M{
+						"if": bson.M{"$gt": []interface{}{bson.M{"$size": "$user"}, 0}},
+						// Use $toBool to convert any type to boolean
+						"then": bson.M{
+							"$toBool": bson.M{
+								"$arrayElemAt": []interface{}{"$user.isPrivate", 0},
+							},
+						},
+						"else": false,
+					},
+				},
+			},
+		},
+		{
+			"$project": bson.M{
+				"user": 0, // Remove the user array from output
+			},
+		},
+		{
+			"$sort": bson.M{"createdAt": -1}, // Sort by createdAt descending
+		},
+	}
+
+	cursor, err := postCollection.Aggregate(ctx, pipeline)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -331,10 +644,10 @@ func GetPostsByUser(c *gin.Context) {
 		return
 	}
 
-	// Convert posts to response format with reaction info
+	// Convert posts to response format with reaction info and privacy handling
 	var postResponses []models.PostResponse
 	for _, post := range posts {
-		postResponses = append(postResponses, post.ToResponse(username))
+		postResponses = append(postResponses, post.ToResponse(requestingUsername))
 	}
 
 	c.JSON(http.StatusOK, postResponses)
