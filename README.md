@@ -81,3 +81,58 @@ Base URL: `/api/v1`
 
 - `POST /posts/:id/unlike` - Unlike post (requires auth)
 - `POST /posts/:id/undislike` - Undislike post (requires auth)
+
+### Messages
+
+All message endpoints require authentication.
+
+- `GET /messages` - Get list of all conversations for the authenticated user
+
+  - Returns a summary of each conversation with just the last message
+
+- `GET /messages/unread_count` - Get total number of unread messages across all conversations
+
+  - Returns: `{"unreadCount": 5}`
+
+- `GET /messages/:username` - Get conversation with specific user
+
+  - Returns the conversation if it exists
+  - Returns a 410 (Gone) if the conversation was deleted by the authenticated user
+  - Returns a 400 (Bad Request) if the authenticated user tries to get a conversation with themselves
+
+- `POST /messages/:username` - Send a message to a specific user
+
+  - Request body: `{"content": "Message content"}`
+  - Creates a new conversation if one doesn't exist
+  - Returns a 400 (Bad Request) if the message content exceeds 500 characters
+  - Returns a 400 (Bad Request) if the authenticated user tries to message themselves
+  - Returns a 404 (Not Found) if the target user doesn't exist
+
+- `POST /messages/:username/read` - Mark all messages in a conversation as read
+
+  - Returns a 404 (Not Found) if the target user doesn't exist
+  - Returns a 400 (Bad Request) if the conversation was deleted by the authenticated user
+
+- `DELETE /messages/:username` - Delete conversation with specific user
+  - Marks the conversation as deleted for the authenticated user only
+  - The other participant can still see the conversation
+  - Returns a 400 (Bad Request) if the conversation was already deleted by the authenticated user
+  - Returns a 400 (Bad Request) if the authenticated user tries to delete a conversation with themselves
+
+#### Message limits and behavior
+
+- Each conversation stores a maximum of 100 messages
+- When this limit is exceeded, the oldest messages are automatically removed
+- Messages cannot be individually deleted, only entire conversations
+- Deleted conversations are hidden from the user who deleted them but remain visible to the other user
+- If both users delete a conversation, it is permanently removed from the database
+
+### Notifications
+
+All notification endpoints require authentication.
+
+- `GET /notifications` - Get all notifications for the authenticated user
+
+- `GET /notifications/unread-count` - Get the count of unread notifications
+
+- `POST /notifications/:id` - Mark a notification as read
