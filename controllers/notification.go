@@ -65,7 +65,8 @@ func GetNotifications(c *gin.Context) {
 			{Key: "read", Value: 1},       // Unread (false) first
 			{Key: "updatedAt", Value: -1}, // Newest first
 		}).
-		SetLimit(50) // Limit to 50 notifications
+		SetLimit(50).                        // Limit to 50 notifications
+		SetProjection(bson.M{"username": 0}) // Exclude username field from results
 
 	cursor, err := notificationCollection.Find(ctx, bson.M{"username": username}, findOptions)
 	if err != nil {
