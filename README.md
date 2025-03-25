@@ -88,6 +88,16 @@ Base URL: `/api/v1`
 
 - `GET /posts/:id` - Get post
 - `POST /posts` - Create new post (requires auth)
+  - Request body:
+    ```json
+    {
+      "content": "Your post content",
+      "replyTo": "optional-post-id-to-reply-to",
+      "universityId": "optional-university-id"
+    }
+    ```
+  - If `universityId` is provided and valid, the post will be created for that university
+  - If `universityId` is not provided, the post will be created for the user's own university
 - `DELETE /posts/:id` - Delete post (requires auth)
 
 ### Replies

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"github.com/sirridemirtas/anonsocial/config"
+	"github.com/sirridemirtas/anonsocial/data"
 	"github.com/sirridemirtas/anonsocial/middleware"
 	"github.com/sirridemirtas/anonsocial/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -26,8 +27,9 @@ func CreatePost(c *gin.Context) {
 	defer cancel()
 
 	var input struct {
-		Content string `json:"content" binding:"required,max=500"`
-		ReplyTo string `json:"replyTo,omitempty"`
+		Content      string `json:"content" binding:"required,max=500"`
+		ReplyTo      string `json:"replyTo,omitempty"`
+		UniversityID string `json:"universityId,omitempty"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -36,11 +38,23 @@ func CreatePost(c *gin.Context) {
 	}
 
 	username := c.GetString("username")
-	universityID := c.GetString("universityId")
+	userUniversityID := c.GetString("universityId")
+
+	// Determine which universityId to use
+	postUniversityID := userUniversityID
+	if input.UniversityID != "" {
+		// If a universityId was provided, validate it using IsValidUniversityID
+		if data.IsValidUniversityID(input.UniversityID) {
+			postUniversityID = input.UniversityID
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz üniversite ID'si"})
+			return
+		}
+	}
 
 	post := models.Post{
 		Username:     username,
-		UniversityID: universityID, // Set universityId for ALL posts (including replies)
+		UniversityID: postUniversityID, // Use the determined universityId
 		Content:      input.Content,
 		CreatedAt:    time.Now(),
 		Reactions: models.Reactions{
