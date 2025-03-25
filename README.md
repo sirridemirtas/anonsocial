@@ -167,3 +167,37 @@ All notification endpoints require authentication.
 - `GET /notifications/unread-count` - Get the count of unread notifications
 
 - `POST /notifications/:id` - Mark a notification as read
+
+### Contact
+
+- `POST /contact` - Submit a contact form
+
+  - Request body:
+    ```json
+    {
+      "name": "Your Name",
+      "email": "your.email@example.com",
+      "subject": "Genel",
+      "message": "Your message here"
+    }
+    ```
+  - The `subject` field must be one of: "Genel", "Destek", "Öneri", "Teknik", "Şikayet"
+  - Responses:
+    - Success:
+      ```json
+      {
+        "message": "Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız."
+      }
+      ```
+    - Invalid email:
+      ```json
+      {
+        "error": "Geçerli bir e-posta adresi girmelisiniz"
+      }
+      ```
+    - Invalid subject:
+      ```json
+      {
+        "error": "Konu, şu seçeneklerden biri olmalıdır: Genel, Destek, Öneri, Teknik, Şikayet"
+      }
+      ```

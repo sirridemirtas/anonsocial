@@ -84,6 +84,13 @@ func ValidateUsername(username string) []string {
 	return errors
 }
 
+// ValidateEmail checks if the provided email is valid
+func ValidateEmail(email string) bool {
+	// Simple regex for basic email validation
+	regex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	return regex.MatchString(email)
+}
+
 // ValidateAvatar validates avatar data
 func ValidateAvatar(avatar interface{}) []string {
 	var errors []string

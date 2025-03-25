@@ -38,5 +38,8 @@ func main() {
 	routes.NotificationRoutes(apiV1) // Add this line
 	routes.StaticRoutes(router)
 
+	// Contact form route
+	router.POST("/api/v1/contact", controllers.SubmitContactForm)
+
 	router.Run(":" + config.AppConfig.Port)
 }
