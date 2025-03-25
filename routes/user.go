@@ -12,9 +12,10 @@ func UserRoutes(rg *gin.RouterGroup) {
 		userGroup.GET("", controllers.GetUsers)
 		userGroup.GET("/:username", controllers.GetUser)
 		userGroup.GET("/check-username/:username", controllers.CheckUsernameAvailability)
-		//userGroup.PUT("/:id", middleware.Auth(0), controllers.UpdateUser)            // Normal user
-		userGroup.DELETE("/:id", middleware.Auth(1), controllers.DeleteUser)         // Admin only
-		userGroup.PUT("/privacy", middleware.Auth(0), controllers.UpdateUserPrivacy) // New privacy endpoint
+		//userGroup.PUT("/:id", middleware.Auth(0), controllers.UpdateUser)
+		userGroup.DELETE("/:id", middleware.Auth(1), controllers.DeleteUser)
+		userGroup.PUT("/privacy", middleware.Auth(0), controllers.UpdateUserPrivacy)
+		userGroup.POST("/password/reset", middleware.Auth(0), controllers.ResetPassword)
 
 		// Avatar endpoints
 		userGroup.GET("/:username/avatar", middleware.OptionalAuth(), controllers.GetUserAvatar)

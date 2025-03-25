@@ -444,6 +444,77 @@ func UpdateUserAvatar(c *gin.Context) {
 	}
 }
 
+// ResetPassword resets the password for the authenticated user
+func ResetPassword(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Get username from token that was set by the Auth middleware
+	username := c.GetString("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Token içinde kullanıcı adı bulunamadı"}) // Username not found in token
+		return
+	}
+
+	var input struct {
+		CurrentPassword string `json:"currentPassword" binding:"required"`
+		NewPassword     string `json:"newPassword" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Find the user
+	var user models.User
+	err := userCollection.FindOne(ctx, bson.M{"username": username}).Decode(&user)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Kullanıcı bulunamadı"}) // User not found
+		return
+	}
+
+	// Verify current password
+	if !user.ValidatePassword(input.CurrentPassword) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Mevcut şifre yanlış"}) // Current password is incorrect
+		return
+	}
+
+	// Generate new salt and hash password
+	user.Salt = models.GenerateSalt()
+	user.Password = user.HashPassword(input.NewPassword)
+
+	// Update the user in the database
+	update := bson.M{
+		"$set": bson.M{
+			"password": user.Password,
+			"salt":     user.Salt,
+		},
+	}
+
+	// Use collation option for case-insensitive search
+	opts := options.Update().SetCollation(&options.Collation{
+		Locale:   "en",
+		Strength: 2, // Case-insensitive comparison
+	})
+
+	result, err := userCollection.UpdateOne(ctx, bson.M{"username": username}, update, opts)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if result.MatchedCount == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Kullanıcı bulunamadı"}) // User not found
+		return
+	}
+
+	// Clear the auth cookie to log the user out
+	c.SetCookie("token", "", -1, "/", "", false, true)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Sıfırlama işlemi başarılı, yeni şifrenizle giriş yapabilirsiniz"})
+}
+
 // Helper function to get the username from the request
 func getUsernameFromUserRequest(c *gin.Context) string {
 	// First try to get from context (set by Auth middleware)

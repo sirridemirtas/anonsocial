@@ -57,6 +57,25 @@ Base URL: `/api/v1`
 - `PUT /users/privacy` - (requires auth. isPrivate: true|false)
 - `GET /users/:username/avatar` - Get user's avatar (respects privacy settings)
 - `POST /users/:username/avatar` - Create or update user's avatar (requires auth, can only update own avatar)
+- `POST /users/password/reset` - Reset password for the authenticated user (requires auth)
+  - Example request:
+    ```json
+    {
+      "currentPassword": "your-current-password",
+      "newPassword": "your-new-password123"
+    }
+    ```
+  - Response:
+    ```json
+    {
+      "message": "Sıfırlama işlemi başarılı, yeni şifrenizle giriş yapabilirsiniz"
+    }
+    ```
+  - Possible error responses:
+    ```json
+    { "error": "Mevcut şifre yanlış" } // Status 401 - Current password is incorrect
+    ```
+  - Automatically logs the user out after successful password reset
 
 ### Feeds
 
