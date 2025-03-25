@@ -21,25 +21,27 @@ type ReactionCounts struct {
 }
 
 type Post struct {
-	ID            primitive.ObjectID  `bson:"_id,omitempty" json:"id,omitempty"`
-	Username      string              `bson:"username" json:"username"`
-	UniversityID  string              `bson:"universityId" json:"universityId" validate:"required,university"`
-	Content       string              `bson:"content" json:"content" validate:"required,max=500"`
-	ReplyTo       *primitive.ObjectID `bson:"replyTo,omitempty" json:"replyTo,omitempty"`
-	CreatedAt     time.Time           `bson:"createdAt" json:"createdAt"`
-	Reactions     Reactions           `bson:"reactions" json:"-"`     // Stored but not directly returned
-	UserIsPrivate bool                `bson:"userIsPrivate" json:"-"` // Internal field not to be exposed in JSON
+	ID               primitive.ObjectID  `bson:"_id,omitempty" json:"id,omitempty"`
+	Username         string              `bson:"username" json:"username"`
+	UniversityID     string              `bson:"universityId" json:"universityId" validate:"required,university"`
+	UserUniversityID string              `bson:"userUniversityId" json:"userUniversityId"` // User's own university ID
+	Content          string              `bson:"content" json:"content" validate:"required,max=500"`
+	ReplyTo          *primitive.ObjectID `bson:"replyTo,omitempty" json:"replyTo,omitempty"`
+	CreatedAt        time.Time           `bson:"createdAt" json:"createdAt"`
+	Reactions        Reactions           `bson:"reactions" json:"-"`     // Stored but not directly returned
+	UserIsPrivate    bool                `bson:"userIsPrivate" json:"-"` // Internal field not to be exposed in JSON
 }
 
 // PostResponse is used for API responses, including reaction counts
 type PostResponse struct {
-	ID           primitive.ObjectID  `json:"id,omitempty"`
-	Username     string              `json:"username"`
-	UniversityID string              `json:"universityId"`
-	Content      string              `json:"content"`
-	ReplyTo      *primitive.ObjectID `json:"replyTo,omitempty"`
-	CreatedAt    time.Time           `json:"createdAt"`
-	Reactions    ReactionCounts      `json:"reactions"`
+	ID               primitive.ObjectID  `json:"id,omitempty"`
+	Username         string              `json:"username"`
+	UniversityID     string              `json:"universityId"`
+	UserUniversityID string              `json:"userUniversityId"` // User's own university ID
+	Content          string              `json:"content"`
+	ReplyTo          *primitive.ObjectID `json:"replyTo,omitempty"`
+	CreatedAt        time.Time           `json:"createdAt"`
+	Reactions        ReactionCounts      `json:"reactions"`
 }
 
 // ToResponse converts a Post to a PostResponse with reaction counts
@@ -53,12 +55,13 @@ func (p *Post) ToResponse(username string) PostResponse {
 	}
 
 	return PostResponse{
-		ID:           postCopy.ID,
-		Username:     postCopy.Username, // This will be empty if user is private and requester is not the owner
-		UniversityID: postCopy.UniversityID,
-		Content:      postCopy.Content,
-		ReplyTo:      postCopy.ReplyTo,
-		CreatedAt:    postCopy.CreatedAt,
+		ID:               postCopy.ID,
+		Username:         postCopy.Username, // This will be empty if user is private and requester is not the owner
+		UniversityID:     postCopy.UniversityID,
+		UserUniversityID: postCopy.UserUniversityID, // Include user's university ID in all responses
+		Content:          postCopy.Content,
+		ReplyTo:          postCopy.ReplyTo,
+		CreatedAt:        postCopy.CreatedAt,
 		Reactions: ReactionCounts{
 			LikeCount:    len(p.Reactions.Likes),
 			DislikeCount: len(p.Reactions.Dislikes),

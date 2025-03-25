@@ -40,7 +40,7 @@ func CreatePost(c *gin.Context) {
 	username := c.GetString("username")
 	userUniversityID := c.GetString("universityId")
 
-	// Determine which universityId to use
+	// Determine which universityId to use for post placement
 	postUniversityID := userUniversityID
 	if input.UniversityID != "" {
 		// If a universityId was provided, validate it using IsValidUniversityID
@@ -53,10 +53,11 @@ func CreatePost(c *gin.Context) {
 	}
 
 	post := models.Post{
-		Username:     username,
-		UniversityID: postUniversityID, // Use the determined universityId
-		Content:      input.Content,
-		CreatedAt:    time.Now(),
+		Username:         username,
+		UniversityID:     postUniversityID, // University where the post appears
+		UserUniversityID: userUniversityID, // Always user's own university ID
+		Content:          input.Content,
+		CreatedAt:        time.Now(),
 		Reactions: models.Reactions{
 			Likes:    []string{},
 			Dislikes: []string{},
