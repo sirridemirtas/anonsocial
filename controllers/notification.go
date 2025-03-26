@@ -153,6 +153,71 @@ func MarkAsRead(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Bildirim okundu olarak işaretlendi"})
 }
 
+// MarkAllAsRead marks all notifications as read for the authenticated user
+func MarkAllAsRead(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	username := c.GetString("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kullanıcı adı bulunamadı"})
+		return
+	}
+
+	// Update all notifications to mark them as read
+	result, err := notificationCollection.UpdateMany(
+		ctx,
+		bson.M{
+			"username": username,
+			"read":     false,
+		},
+		bson.M{
+			"$set": bson.M{
+				"read": true,
+			},
+		},
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Tüm bildirimler okundu olarak işaretlendi", "modifiedCount": result.ModifiedCount})
+}
+
+// DeleteAllNotifications deletes all notifications for the authenticated user
+func DeleteAllNotifications(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	username := c.GetString("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Kullanıcı adı bulunamadı"})
+		return
+	}
+
+	// Delete all notifications for the user (both read and unread)
+	result, err := notificationCollection.DeleteMany(
+		ctx,
+		bson.M{
+			"username": username,
+		},
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Bildirimler silinirken bir hata oluştu: " + err.Error()})
+		return
+	}
+
+	if result.DeletedCount == 0 {
+		c.JSON(http.StatusOK, gin.H{"message": "Silinecek bildirim bulunamadı"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Tüm bildirimler başarıyla silindi", "deletedCount": result.DeletedCount})
+}
+
 // CreateOrUpdateReactionNotification handles notifications for reactions (likes/dislikes)
 func CreateOrUpdateReactionNotification(postID primitive.ObjectID, postOwner string, postContent string, isLike bool) {
 	// Don't notify if the content owner reacts to their own content

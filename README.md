@@ -168,6 +168,10 @@ All notification endpoints require authentication.
 
 - `POST /notifications/:id` - Mark a notification as read
 
+- `POST /notifications/mark-all-read` - Mark all notifications as read for the authenticated user
+
+- `DELETE /notifications/delete-all` - Alternative endpoint to delete all notifications
+
 ### Contact
 
 - `POST /contact` - Submit a contact form

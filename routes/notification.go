@@ -18,4 +18,10 @@ func NotificationRoutes(rg *gin.RouterGroup) {
 
 	// Mark a notification as read
 	notifications.POST("/:id", controllers.MarkAsRead)
+
+	// Mark all notifications as read
+	notifications.POST("/mark-all-read", controllers.MarkAllAsRead)
+
+	// Delete all notifications
+	notifications.DELETE("/delete-all", controllers.DeleteAllNotifications)
 }
