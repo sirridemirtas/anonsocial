@@ -7,9 +7,8 @@ import (
 )
 
 func FeedRoutes(rg *gin.RouterGroup) {
-	rg.GET("/feed", middleware.OptionalAuth(), controllers.GetFeedPosts)
-
+	rg.GET("/posts", middleware.OptionalAuth(), controllers.GetFeedPosts)
 	rg.GET("/posts/:id/replies", middleware.OptionalAuth(), controllers.GetFeedPostReplies)
-	rg.GET("/users/:username/posts", middleware.OptionalAuth(), middleware.OptionalAuth(), controllers.GetFeedUserPosts)
 	rg.GET("/posts/university/:universityId", controllers.GetFeedUniversityPosts)
+	rg.GET("/users/:username/posts", middleware.OptionalAuth(), middleware.OptionalAuth(), controllers.GetFeedUserPosts)
 }
