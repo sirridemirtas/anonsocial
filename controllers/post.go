@@ -19,7 +19,7 @@ import (
 var postCollection *mongo.Collection
 
 func SetPostCollection(client *mongo.Client) {
-	postCollection = client.Database("anonsocial").Collection("posts")
+	postCollection = client.Database(config.AppConfig.MongoDB_DB).Collection("posts")
 }
 
 func CreatePost(c *gin.Context) {

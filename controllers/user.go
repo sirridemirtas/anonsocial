@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/sirridemirtas/anonsocial/config"
 	"github.com/sirridemirtas/anonsocial/middleware"
 	"github.com/sirridemirtas/anonsocial/models"
 	"github.com/sirridemirtas/anonsocial/utils"
@@ -22,8 +23,8 @@ var userCollection *mongo.Collection
 var avatarCollection *mongo.Collection
 
 func SetUserCollection(client *mongo.Client) {
-	userCollection = client.Database("anonsocial").Collection("users")
-	avatarCollection = client.Database("anonsocial").Collection("avatars")
+	userCollection = client.Database(config.AppConfig.MongoDB_DB).Collection("users")
+	avatarCollection = client.Database(config.AppConfig.MongoDB_DB).Collection("avatars")
 
 	// First, drop the existing index if it exists
 	_, err := userCollection.Indexes().DropOne(

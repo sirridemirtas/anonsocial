@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirridemirtas/anonsocial/config"
 	"github.com/sirridemirtas/anonsocial/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -16,7 +17,7 @@ import (
 var conversationCollection *mongo.Collection
 
 func SetConversationCollection(client *mongo.Client) {
-	conversationCollection = client.Database("anonsocial").Collection("conversations")
+	conversationCollection = client.Database(config.AppConfig.MongoDB_DB).Collection("conversations")
 
 	// Try to drop all existing indexes to start fresh
 	_, _ = conversationCollection.Indexes().DropAll(context.Background())

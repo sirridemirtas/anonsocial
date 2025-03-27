@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirridemirtas/anonsocial/config"
 	"github.com/sirridemirtas/anonsocial/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -16,7 +17,7 @@ import (
 var notificationCollection *mongo.Collection
 
 func SetNotificationCollection(client *mongo.Client) {
-	notificationCollection = client.Database("anonsocial").Collection("notifications")
+	notificationCollection = client.Database(config.AppConfig.MongoDB_DB).Collection("notifications")
 
 	// Create index for username field for faster queries
 	_, err := notificationCollection.Indexes().CreateOne(
