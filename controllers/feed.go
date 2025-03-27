@@ -51,10 +51,24 @@ func GetFeedPosts(c *gin.Context) {
 		return
 	}
 
-	// Transform posts to include reaction counts
+	// Transform posts to include reaction counts and respect privacy settings
 	var postResponses []models.PostResponse
 	for _, post := range posts {
-		postResponses = append(postResponses, post.ToResponse(username))
+		// Check if post owner is private and requester is not the owner
+		var isPrivate bool
+		if post.Username != username {
+			var user models.User
+			err := userCollection.FindOne(ctx, bson.M{"username": post.Username}).Decode(&user)
+			if err == nil && user.IsPrivate {
+				isPrivate = true
+			}
+		}
+
+		response := post.ToResponse(username)
+		if isPrivate {
+			response.Username = "" // Clear username for private users
+		}
+		postResponses = append(postResponses, response)
 	}
 
 	c.JSON(http.StatusOK, postResponses)
@@ -99,10 +113,24 @@ func GetFeedPostReplies(c *gin.Context) {
 		return
 	}
 
-	// Transform replies to include reaction counts
+	// Transform replies to include reaction counts and respect privacy settings
 	var replyResponses []models.PostResponse
 	for _, reply := range replies {
-		replyResponses = append(replyResponses, reply.ToResponse(username))
+		// Check if reply owner is private and requester is not the owner
+		var isPrivate bool
+		if reply.Username != username {
+			var user models.User
+			err := userCollection.FindOne(ctx, bson.M{"username": reply.Username}).Decode(&user)
+			if err == nil && user.IsPrivate {
+				isPrivate = true
+			}
+		}
+
+		response := reply.ToResponse(username)
+		if isPrivate {
+			response.Username = "" // Clear username for private users
+		}
+		replyResponses = append(replyResponses, response)
 	}
 
 	c.JSON(http.StatusOK, replyResponses)
@@ -123,6 +151,20 @@ func GetFeedUserPosts(c *gin.Context) {
 	username := getUsernameFromRequest(c)
 
 	targetUsername := c.Param("username")
+
+	// First check if user exists and is private
+	var targetUser models.User
+	err = userCollection.FindOne(ctx, bson.M{"username": targetUsername}).Decode(&targetUser)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Kullanıcı bulunamadı"})
+		return
+	}
+
+	// If user is private and requester is not the same user, return empty array
+	if targetUser.IsPrivate && targetUsername != username {
+		c.JSON(http.StatusOK, []models.PostResponse{}) // Empty response
+		return
+	}
 
 	opts := options.Find().
 		SetSort(bson.D{{Key: "createdAt", Value: -1}}).
@@ -193,10 +235,24 @@ func GetFeedUniversityPosts(c *gin.Context) {
 		return
 	}
 
-	// Transform posts to include reaction counts
+	// Transform posts to include reaction counts and respect privacy settings
 	var postResponses []models.PostResponse
 	for _, post := range posts {
-		postResponses = append(postResponses, post.ToResponse(username))
+		// Check if post owner is private and requester is not the owner
+		var isPrivate bool
+		if post.Username != username {
+			var user models.User
+			err := userCollection.FindOne(ctx, bson.M{"username": post.Username}).Decode(&user)
+			if err == nil && user.IsPrivate {
+				isPrivate = true
+			}
+		}
+
+		response := post.ToResponse(username)
+		if isPrivate {
+			response.Username = "" // Clear username for private users
+		}
+		postResponses = append(postResponses, response)
 	}
 
 	c.JSON(http.StatusOK, postResponses)
