@@ -14,7 +14,7 @@ func MessageRoutes(rg *gin.RouterGroup) {
 	messages.GET("", controllers.GetConversationList)
 
 	// Get total unread message count
-	messages.GET("/unread_count", controllers.GetTotalUnreadCount)
+	messages.GET("/unread-count", controllers.GetTotalUnreadCount)
 
 	// Get conversation with specific user
 	messages.GET("/:username", controllers.GetConversation)

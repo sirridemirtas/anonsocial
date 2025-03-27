@@ -109,5 +109,5 @@ func SubmitContactForm(c *gin.Context) {
 	}
 
 	// Return success response
-	c.JSON(http.StatusOK, gin.H{"message": "Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız."})
+	c.JSON(http.StatusOK, gin.H{"message": "Mesajınız gönderildi. En kısa sürede size dönüş yapacağız."})
 }

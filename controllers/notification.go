@@ -215,7 +215,7 @@ func DeleteAllNotifications(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Tüm bildirimler başarıyla silindi", "deletedCount": result.DeletedCount})
+	c.JSON(http.StatusOK, gin.H{"message": "Tüm bildirimler silindi", "deletedCount": result.DeletedCount})
 }
 
 // CreateOrUpdateReactionNotification handles notifications for reactions (likes/dislikes)

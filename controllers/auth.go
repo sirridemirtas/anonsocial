@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -72,7 +73,7 @@ func Register(c *gin.Context) {
 		Role:         user.Role,
 		UniversityID: user.UniversityID,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
+			ExpiresAt: getTokenExpiration().Unix(),
 		},
 	}
 
@@ -124,7 +125,7 @@ func Login(c *gin.Context) {
 		Role:         user.Role,
 		UniversityID: user.UniversityID,
 		StandardClaims: jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(24 * time.Hour).Unix(),
+			ExpiresAt: getTokenExpiration().Unix(),
 		},
 	}
 
@@ -164,4 +165,21 @@ func TokenInfo(c *gin.Context) {
 		"universityId": tokenClaims.UniversityID,
 		"expiresAt":    time.Unix(tokenClaims.ExpiresAt, 0),
 	})
+}
+
+func getTokenExpiration() time.Time {
+	// Get the expiration time from config
+	expiresInStr := config.AppConfig.JWTExpiresIn
+
+	// Parse the string to an integer (assuming it's stored in hours)
+	expiresInHours, err := strconv.Atoi(expiresInStr)
+	if err != nil {
+		// Default to 24 hours if there's an error parsing
+		expiresInHours = 24
+	}
+
+	// Calculate expiration time
+	expirationTime := time.Now().Add(time.Duration(expiresInHours) * time.Hour)
+
+	return expirationTime
 }

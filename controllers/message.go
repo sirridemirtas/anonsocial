@@ -280,7 +280,7 @@ func DeleteConversation(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Görüşme başarıyla silindi"})
+	c.JSON(http.StatusOK, gin.H{"message": "Görüşme silindi"})
 }
 
 // GetConversationList retrieves a list of all conversations for the current user

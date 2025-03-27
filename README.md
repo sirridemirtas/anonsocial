@@ -121,7 +121,7 @@ All message endpoints require authentication.
 
   - Returns a summary of each conversation with just the last message
 
-- `GET /messages/unread_count` - Get total number of unread messages across all conversations
+- `GET /messages/unread-count` - Get total number of unread messages across all conversations
 
   - Returns: `{"unreadCount": 5}`
 
@@ -190,7 +190,7 @@ All notification endpoints require authentication.
     - Success:
       ```json
       {
-        "message": "Mesajınız başarıyla gönderildi. En kısa sürede size dönüş yapacağız."
+        "message": "Mesajınız gönderildi. En kısa sürede size dönüş yapacağız."
       }
       ```
     - Invalid email:

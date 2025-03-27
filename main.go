@@ -19,26 +19,22 @@ func main() {
 	controllers.SetUserCollection(database.GetClient())
 	controllers.SetPostCollection(database.GetClient())
 	controllers.SetConversationCollection(database.GetClient())
-	controllers.SetNotificationCollection(database.GetClient()) // Add this line
+	controllers.SetNotificationCollection(database.GetClient())
 
 	router := gin.Default()
 	router.Use(middleware.Cors())
 
 	apiV1 := router.Group("/api/v1")
 
-	// Register routes in the correct order
-	// First register basic routes
 	routes.AuthRoutes(apiV1)
 	routes.UserRoutes(apiV1)
 	routes.PostRoutes(apiV1)
 
-	// Then register composite routes (like feed which might depend on posts)
 	routes.FeedRoutes(apiV1)
 	routes.MessageRoutes(apiV1)
-	routes.NotificationRoutes(apiV1) // Add this line
+	routes.NotificationRoutes(apiV1)
 	routes.StaticRoutes(router)
 
-	// Contact form route
 	router.POST("/api/v1/contact", controllers.SubmitContactForm)
 
 	router.Run(":" + config.AppConfig.Port)

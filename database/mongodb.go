@@ -28,7 +28,7 @@ func ConnectDB() {
 	}
 
 	Client = client
-	log.Println("\033[32m", "MongoDB'ye başarıyla bağlanıldı!", "\033[0m")
+	log.Println("\033[32m", "MongoDB'ye bağlanıldı!", "\033[0m")
 }
 
 func GetClient() *mongo.Client {
@@ -39,4 +39,4 @@ func DisconnectDB() {
 	if err := Client.Disconnect(context.Background()); err != nil {
 		log.Printf("MongoDB bağlantısı kapatılırken hata oluştu: %v", err)
 	}
-} 
+}
