@@ -37,15 +37,15 @@ func ValidateUser(user interface{}) []string {
 			field := strings.ToLower(err.Field())
 			switch err.Tag() {
 			case "required":
-				errors = append(errors, field+" is required")
+				errors = append(errors, field+" gereklidir") // field is required
 			case "alphanum":
-				errors = append(errors, field+" must contain only letters and numbers")
+				errors = append(errors, field+" yalnızca harf ve rakam içermelidir") // field must contain only letters and numbers
 			case "min":
-				errors = append(errors, field+" must be at least "+err.Param()+" characters long")
+				errors = append(errors, field+" en az "+err.Param()+" karakter uzunluğunda olmalıdır") // field must be at least "+err.Param()+" characters long
 			case "max":
-				errors = append(errors, field+" must not exceed "+err.Param()+" characters")
+				errors = append(errors, field+" en fazla "+err.Param()+" karakter uzunluğunda olmalıdır") // field must not exceed "+err.Param()+" characters
 			case "university":
-				errors = append(errors, "invalid university ID")
+				errors = append(errors, "Geçersiz üniversite kimliği") // invalid university ID
 			}
 		}
 	}
@@ -62,23 +62,23 @@ func ValidateUsername(username string) []string {
 
 	// Check if empty
 	if username == "" {
-		errors = append(errors, "username is required")
+		errors = append(errors, "Kullanıcı adı gereklidir") // username is required
 		return errors
 	}
 
 	// Check length (3-16 characters)
 	length := utf8.RuneCountInString(username)
 	if length < 3 {
-		errors = append(errors, "username must be at least 3 characters long")
+		errors = append(errors, "Kullanıcı adı en az 3 karakter uzunluğunda olmalıdır") // username must be at least 3 characters long
 	}
 	if length > 16 {
-		errors = append(errors, "username must not exceed 16 characters")
+		errors = append(errors, "Kullanıcı adı en fazla 16 karakter uzunluğunda olmalıdır") // username must not exceed 16 characters
 	}
 
 	// Check if alphanumeric only
 	alphanumeric := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	if !alphanumeric.MatchString(username) {
-		errors = append(errors, "username must contain only letters and numbers")
+		errors = append(errors, "Kullanıcı adı yalnızca harf ve rakam içermelidir") // username must contain only letters and numbers
 	}
 
 	return errors
@@ -101,11 +101,11 @@ func ValidateAvatar(avatar interface{}) []string {
 			field := strings.ToLower(err.Field())
 			switch err.Tag() {
 			case "required":
-				errors = append(errors, field+" is required")
+				errors = append(errors, field+" gereklidir") // field is required
 			case "hexcolor":
-				errors = append(errors, field+" must be a valid hex color code (e.g., #FF34EA)")
+				errors = append(errors, field+" geçerli bir hex renk kodu olmalıdır (örneğin, #FF34EA)") // field must be a valid hex color code (e.g., #FF34EA)
 			case "oneof":
-				errors = append(errors, field+" must be one of the allowed values: "+err.Param())
+				errors = append(errors, field+" izin verilen değerlerden biri olmalıdır: "+err.Param()) // field must be one of the allowed values: "+err.Param()
 			}
 		}
 	}

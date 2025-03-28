@@ -71,11 +71,11 @@ func NewConversation(user1, user2 string) *Conversation {
 // It also ensures the conversation has at most MaxMessagesPerConversation messages
 func (c *Conversation) AddMessage(sender, content string) error {
 	if len(content) > MaxMessageLength {
-		return errors.New("message content exceeds maximum length of 500 characters")
+		return errors.New("Mesaj içeriği 500 karakterlik maksimum uzunluğu aşıyor") // message content exceeds maximum length of 500 characters
 	}
 
 	if sender != c.Participants[0] && sender != c.Participants[1] {
-		return errors.New("sender is not a participant in this conversation")
+		return errors.New("Gönderici bu konuşmanın katılımcılarından biri değil") // sender is not a participant in this conversation
 	}
 
 	// Find the receiver (the other participant)
@@ -130,7 +130,7 @@ func (c *Conversation) IsDeletedBy(username string) bool {
 // MarkAsRead marks all messages as read for a specific user
 func (c *Conversation) MarkAsRead(username string) error {
 	if !c.HasParticipant(username) {
-		return errors.New("user is not a participant in this conversation")
+		return errors.New("Kullanıcı bu konuşmanın katılımcılarından biri değil") // user is not a participant in this conversation
 	}
 
 	c.UnreadCounts[username] = 0
