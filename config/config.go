@@ -13,6 +13,7 @@ type Config struct {
 	MongoDB_DB   string
 	JWTSecret    string
 	JWTExpiresIn string
+	CookieDomain string
 }
 
 var AppConfig Config
@@ -34,5 +35,6 @@ func LoadConfig() {
 		MongoDB_DB:   os.Getenv("MONGODB_DB"),
 		JWTSecret:    os.Getenv("JWT_SECRET"),
 		JWTExpiresIn: os.Getenv("JWT_EXPIRES_IN"),
+		CookieDomain: os.Getenv("COOKIE_DOMAIN"),
 	}
 }

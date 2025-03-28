@@ -66,7 +66,7 @@ func Register(c *gin.Context) {
 
 	user.ID = result.InsertedID.(primitive.ObjectID)
 
-	// Generate JWT token after successful registration
+	/* // Generate JWT token after successful registration
 	claims := &middleware.Claims{
 		UserID:       user.ID.Hex(),
 		Username:     user.Username,
@@ -84,7 +84,12 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("token", tokenString, 3600*24, "/", "", false, true)
+	cookieDomain := config.AppConfig.CookieDomain
+	if cookieDomain == "" {
+		cookieDomain = ""
+	}
+
+	c.SetCookie("token", tokenString, 3600*24, "/", cookieDomain, false, true) */
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "Kayıt başarılı",
 		"user": gin.H{
@@ -136,7 +141,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("token", tokenString, 3600*24, "/", "", false, true)
+	// Cookie domain'i config'den al
+	cookieDomain := config.AppConfig.CookieDomain
+	if cookieDomain == "" {
+		cookieDomain = ""
+	}
+
+	c.SetCookie("token", tokenString, 3600*24, "/", cookieDomain, false, true)
 	c.JSON(http.StatusOK, gin.H{
 		"message":      "Giriş başarılı",
 		"username":     user.Username,
