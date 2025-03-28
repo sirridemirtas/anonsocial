@@ -34,7 +34,7 @@ go run github.com/air-verse/air@latest
 ### Production Mode
 
 ```bash
-GO_ENV=production go run main.go
+GO_ENV=production GIN_MODE=release go run main.go
 ```
 
 ## API Endpoints
