@@ -171,12 +171,59 @@ func TokenInfo(c *gin.Context) {
 
 	tokenClaims := claims.(*middleware.Claims)
 
+	// Check if refresh parameter is set to true
+	refresh := c.Query("refresh")
+	if refresh == "true" {
+		// Get up-to-date user information from database
+		var user models.User
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		err := userCollection.FindOne(ctx, bson.M{"username": tokenClaims.Username}).Decode(&user)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Kullanıcı bilgileri alınamadı"})
+			return
+		}
+
+		// Create new claims with latest user data
+		newClaims := &middleware.Claims{
+			UserID:       user.ID.Hex(),
+			Username:     user.Username,
+			Role:         user.Role,
+			UniversityID: user.UniversityID,
+			StandardClaims: jwt.StandardClaims{
+				ExpiresAt: getTokenExpiration().Unix(),
+			},
+		}
+
+		// Generate new token string
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, newClaims)
+		tokenString, err := token.SignedString([]byte(config.AppConfig.JWTSecret))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Yeni token oluşturulamadı"})
+			return
+		}
+
+		// Get cookie domain from config
+		cookieDomain := config.AppConfig.CookieDomain
+		if cookieDomain == "" {
+			cookieDomain = ""
+		}
+
+		// Set the new cookie with the refreshed token
+		c.SetCookie("token", tokenString, 3600*24, "/", cookieDomain, false, true)
+
+		// Update token claims for the response
+		tokenClaims = newClaims
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"userId":       tokenClaims.UserID,
 		"username":     tokenClaims.Username,
 		"role":         tokenClaims.Role,
 		"universityId": tokenClaims.UniversityID,
 		"expiresAt":    time.Unix(tokenClaims.ExpiresAt, 0),
+		"refreshed":    refresh == "true",
 	})
 }
 
