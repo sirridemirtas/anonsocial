@@ -71,17 +71,22 @@ Base URL: `/api/v1`
       "newPassword": "your-new-password123"
     }
     ```
+
+### Administration (Role 2 required)
+
+- `PUT /admin/users/:username/role` - Update a user's role (can only set to 0 or 1)
+  - Example request:
+    ```json
+    {
+      "role": 1
+    }
+    ```
   - Response:
     ```json
     {
-      "message": "Sıfırlama işlemi başarılı, yeni şifrenizle giriş yapabilirsiniz"
+      "message": "Kullanıcı yetkisi güncellendi"
     }
     ```
-  - Possible error responses:
-    ```json
-    { "error": "Mevcut şifre yanlış" } // Status 401 - Current password is incorrect
-    ```
-  - Automatically logs the user out after successful password reset
 
 ### Feeds
 

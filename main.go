@@ -29,10 +29,10 @@ func main() {
 	routes.AuthRoutes(apiV1)
 	routes.UserRoutes(apiV1)
 	routes.PostRoutes(apiV1)
-
 	routes.FeedRoutes(apiV1)
 	routes.MessageRoutes(apiV1)
 	routes.NotificationRoutes(apiV1)
+	routes.AdminRoutes(apiV1)
 	routes.StaticRoutes(router)
 
 	router.POST("/api/v1/contact", controllers.SubmitContactForm)
