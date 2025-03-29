@@ -45,6 +45,7 @@ Base URL: `/api/v1`
 
 - `POST /auth/register` - Register new user
 - `POST /auth/login` - Login
+  - Returns user information including username, email, and role
 - `POST /auth/logout` - Logout (requires auth)
 
 ### Users
@@ -104,6 +105,8 @@ Base URL: `/api/v1`
 
 - `POST /posts/:id/replies` - Create reply (requires auth)
 - `DELETE /posts/:id` - Delete post(reply) (requires auth)
+  - Users with role 0 can only delete their own posts/replies
+  - Users with role 1 or 2 can delete any post/reply regardless of ownership
 
 ### Reactions
 

@@ -149,10 +149,12 @@ func Login(c *gin.Context) {
 
 	c.SetCookie("token", tokenString, 3600*24, "/", cookieDomain, false, true)
 	c.JSON(http.StatusOK, gin.H{
-		"message":      "Giriş başarılı",
+		"id":           user.ID.Hex(),
 		"username":     user.Username,
+		"role":         user.Role,
 		"universityId": user.UniversityID,
-	})
+	},
+	)
 }
 
 func Logout(c *gin.Context) {

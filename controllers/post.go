@@ -547,6 +547,7 @@ func DeletePost(c *gin.Context) {
 	}
 
 	username := c.GetString("username")
+	userRole := c.GetInt("userRole")
 
 	var post models.Post
 	err = postCollection.FindOne(ctx, bson.M{"_id": postId}).Decode(&post)
@@ -555,7 +556,8 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	if post.Username != username && c.GetInt("userRole") != 1 {
+	// Allow users with role 1 or 2 to delete any post
+	if post.Username != username && userRole != 1 && userRole != 2 {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Bu gönderiyi silme izniniz yok"}) // Not authorized to delete this post
 		return
 	}
