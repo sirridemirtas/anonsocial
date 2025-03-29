@@ -37,5 +37,12 @@ func main() {
 
 	router.POST("/api/v1/contact", controllers.SubmitContactForm)
 
+	router.GET("/api/v1/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status":  "ok",
+			"message": "Server is running",
+		})
+	})
+
 	router.Run(":" + config.AppConfig.Port)
 }
