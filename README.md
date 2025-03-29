@@ -47,6 +47,11 @@ Base URL: `/api/v1`
 - `POST /auth/login` - Login
   - Returns user information including username, email, and role
 - `POST /auth/logout` - Logout (requires auth)
+- `GET /auth/token-info` - Get information about the current token (requires auth)
+- `POST /auth/refresh-token` - Refresh the authentication token (requires auth)
+  - Generates a new token with a new expiration time
+  - The old token is invalidated
+  - Returns a success message: `{"message": "Token yenilendi"}`
 
 ### Users
 
@@ -208,3 +213,16 @@ All notification endpoints require authentication.
         "error": "Konu, şu seçeneklerden biri olmalıdır: Genel, Destek, Öneri, Teknik, Şikayet"
       }
       ```
+
+### Health
+
+- `GET /health` - Check API health status
+  - Returns basic system health information
+  - No authentication required
+  - Example response:
+    ```json
+    {
+      "status": "up",
+      "timestamp": "2023-05-01T12:34:56Z"
+    }
+    ```

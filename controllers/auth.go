@@ -196,3 +196,46 @@ func getTokenExpiration() time.Time {
 
 	return expirationTime
 }
+
+func RefreshToken(c *gin.Context) {
+	// Get claims from context that were set by Auth middleware
+	claims, exists := c.Get("claims")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Token bilgileri alınamadı"})
+		return
+	}
+
+	tokenClaims := claims.(*middleware.Claims)
+
+	// Create a new token with the same user information but new expiration time
+	newClaims := &middleware.Claims{
+		UserID:       tokenClaims.UserID,
+		Username:     tokenClaims.Username,
+		Role:         tokenClaims.Role,
+		UniversityID: tokenClaims.UniversityID,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: getTokenExpiration().Unix(),
+		},
+	}
+
+	// Generate new token string
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, newClaims)
+	tokenString, err := token.SignedString([]byte(config.AppConfig.JWTSecret))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Yeni token oluşturulamadı"})
+		return
+	}
+
+	// Get cookie domain from config
+	cookieDomain := config.AppConfig.CookieDomain
+	if cookieDomain == "" {
+		cookieDomain = ""
+	}
+
+	// Set the new cookie with the refreshed token (replacing the old one)
+	// Using the same cookie settings as in the Login function
+	c.SetCookie("token", tokenString, 3600*24, "/", cookieDomain, false, true)
+
+	// Return success message
+	c.JSON(http.StatusOK, gin.H{"message": "Token yenilendi"})
+}
