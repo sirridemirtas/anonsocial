@@ -30,8 +30,9 @@ func UpdateUserRole(c *gin.Context) {
 	}
 
 	// Parse the requested role from request body
+	// Using pointer to int (*int) to distinguish between "not provided" and "value is 0"
 	var input struct {
-		Role int `json:"role" binding:"required"`
+		Role *int `json:"role" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -39,8 +40,14 @@ func UpdateUserRole(c *gin.Context) {
 		return
 	}
 
+	// Check if Role was provided
+	if input.Role == nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Yetki seviyesi zorunludur"}) // Role level is required
+		return
+	}
+
 	// Validate the role value (must be 0 or 1)
-	if input.Role != 0 && input.Role != 1 {
+	if *input.Role != 0 && *input.Role != 1 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Yetki seviyesi 0 veya 1 olmalıdır"}) // Role must be 0 or 1
 		return
 	}
@@ -54,7 +61,7 @@ func UpdateUserRole(c *gin.Context) {
 	// Update the user's role
 	update := bson.M{
 		"$set": bson.M{
-			"role": input.Role,
+			"role": *input.Role,
 		},
 	}
 
