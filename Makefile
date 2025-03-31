@@ -1,8 +1,16 @@
+.PHONY: dev build clean run
 
-.PHONY: dev build
+deps:
+	go mod download
 
 dev:
-	air
+	GIN_MODE=debug go run github.com/air-verse/air@latest
 
-build:
-	go build -o main .
+build: deps
+	GIN_MODE=release go build -tags netgo -ldflags '-s -w' -o app
+
+clean:
+	rm -f app
+
+run: build
+	GIN_MODE=release ./app
