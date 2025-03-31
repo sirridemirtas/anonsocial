@@ -2,14 +2,17 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/cors"
+
+	"github.com/sirridemirtas/anonsocial/config"
 )
 
 func Cors() gin.HandlerFunc {
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000", "https://agora-313.pages.dev"},
+		AllowedOrigins:   strings.Split(config.AppConfig.AllowedOrigins, ","),
 		AllowCredentials: true,
 		AllowedHeaders: []string{
 			"Content-Type",

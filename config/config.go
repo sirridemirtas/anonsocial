@@ -8,12 +8,13 @@ import (
 )
 
 type Config struct {
-	Port         string
-	MongoDBURI   string
-	MongoDB_DB   string
-	JWTSecret    string
-	JWTExpiresIn string
-	CookieDomain string
+	Port           string
+	MongoDBURI     string
+	MongoDB_DB     string
+	JWTSecret      string
+	JWTExpiresIn   string
+	CookieDomain   string
+	AllowedOrigins string // Comma-separated list of allowed origins
 }
 
 var AppConfig Config
@@ -30,11 +31,12 @@ func LoadConfig() {
 	}
 
 	AppConfig = Config{
-		Port:         os.Getenv("PORT"),
-		MongoDBURI:   os.Getenv("MONGODB_URI"),
-		MongoDB_DB:   os.Getenv("MONGODB_DB"),
-		JWTSecret:    os.Getenv("JWT_SECRET"),
-		JWTExpiresIn: os.Getenv("JWT_EXPIRES_IN"),
-		CookieDomain: os.Getenv("COOKIE_DOMAIN"),
+		Port:           os.Getenv("PORT"),
+		MongoDBURI:     os.Getenv("MONGODB_URI"),
+		MongoDB_DB:     os.Getenv("MONGODB_DB"),
+		JWTSecret:      os.Getenv("JWT_SECRET"),
+		JWTExpiresIn:   os.Getenv("JWT_EXPIRES_IN"),
+		CookieDomain:   os.Getenv("COOKIE_DOMAIN"),
+		AllowedOrigins: os.Getenv("ALLOWED_ORIGINS"),
 	}
 }
