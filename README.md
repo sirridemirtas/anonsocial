@@ -18,216 +18,196 @@ git clone https://github.com/sirridemirtas/anonsocial.git
 2. Install dependencies:
 
 ```bash
-go mod download
+make deps
 ```
 
-3. Environment variables are already set in `.env.development`
-
-## Running the Application
-
-### Development Mode (with Hot Reload)
+3. Development mode (with hot reload):
 
 ```bash
-go run github.com/air-verse/air@latest
+make dev
 ```
 
-### Production Mode
+4. Alternatively, build and run the application:
 
 ```bash
-GO_ENV=production GIN_MODE=release go run main.go
+make run
 ```
 
-## API Endpoints
+This command first builds the application (which includes installing dependencies) and then runs it.
 
-Base URL: `/api/v1`
+5. Or build and run separately:
 
-### Auth
+```bash
+make build  # Also installs dependencies
+make clean  # Remove the compiled binary if needed
+```
 
-- `POST /auth/register` - Register new user
-- `POST /auth/login` - Login
-  - Returns user information including username, email, and role
-- `POST /auth/logout` - Logout (requires auth)
-- `GET /auth/token-info` - Get information about the current token (requires auth)
-- `POST /auth/refresh-token` - Refresh the authentication token (requires auth)
-  - Generates a new token with a new expiration time
-  - The old token is invalidated
-  - Returns a success message: `{"message": "Token yenilendi"}`
+## Makefile Commands
 
-### Users
+- `make deps`: Downloads Go module dependencies
+- `make dev`: Runs the application in development mode using Air for hot reloading
+- `make build`: Builds the application with optimized flags for production
+- `make clean`: Removes the compiled binary
+- `make run`: Builds and runs the application in release mode
 
-- `GET /users` - Get all users
-- `GET /users/:username` - Get user by ID
-- `PUT /users/:id` - Update user (requires auth)
-- `DELETE /users/:id` - Delete user (requires admin)
-- `GET /auth/check-username/:username` - Check username
-- `PUT /users/privacy` - (requires auth. isPrivate: true|false)
-- `GET /users/:username/avatar` - Get user's avatar (respects privacy settings)
-- `POST /users/:username/avatar` - Create or update user's avatar (requires auth, can only update own avatar)
-- `POST /users/password/reset` - Reset password for the authenticated user (requires auth)
-  - Example request:
-    ```json
-    {
-      "currentPassword": "your-current-password",
-      "newPassword": "your-new-password123"
-    }
-    ```
+## Project Structure
 
-### Administration (Role 2 required)
+```
+anonsocial/
+├── config/           # Application configuration management
+├── controllers/      # HTTP request handlers and business logic
+├── database/         # MongoDB connection and database operations
+├── middleware/       # Gin middleware functions (auth, CORS, etc.)
+├── models/           # Data models and structures
+├── routes/           # API endpoint definitions and routing
+├── utils/            # Helper functions and utilities
+├── static/           # Static files (generated and served, gitignored)
+├── .env.development  # Development environment variables
+├── .env.production   # Production environment variables (gitignored)
+├── main.go           # Application entry point
+├── go.mod            # Go module definition
+├── go.sum            # Go module checksumres
+├── Makefile          # Build commands and development utilities
+└── LICENSE           # MIT License
 
-- `PUT /admin/users/:username/role` - Update a user's role (can only set to 0 or 1)
-  - Example request:
-    ```json
-    {
-      "role": 1
-    }
-    ```
-  - Response:
-    ```json
-    {
-      "message": "Kullanıcı yetkisi güncellendi"
-    }
-    ```
+```
 
-### Feeds
+## Environment Variables
 
-- `GET /posts` - Get all posts (home feed)
-- `GET /users/:username/posts` - Get posts by user (user feed)
-- `GET /posts/:id/replies` - Get post replies (post feed)
-- `GET /posts/university/:universityId` - Get posts by university (university feed)
+Create a `.env` file in the project root with the following variables:
 
-### Posts
+```
+PORT=8080
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DB=anonsocial
+JWT_SECRET=your_development_secret_key
+JWT_EXPIRES_IN=720
+COOKIE_DOMAIN=localhost
+ALLOWED_ORIGINS=http://localhost:3000
 
-- `GET /posts/:id` - Get post
-- `POST /posts` - Create new post (requires auth)
-  - Request body:
-    ```json
-    {
-      "content": "Your post content",
-      "replyTo": "optional-post-id-to-reply-to",
-      "universityId": "optional-university-id"
-    }
-    ```
-  - If `universityId` is provided and valid, the post will be created for that university
-  - If `universityId` is not provided, the post will be created for the user's own university
-- `DELETE /posts/:id` - Delete post (requires auth)
+```
 
-### Replies
+- `PORT`: Server port (default: 8080)
+- `MONGODB_URI`: MongoDB connection string
+- `MONGODB_DB`: MongoDB database name
+- `JWT_SECRET`: Secret key for JWT token generation
+- `JWT_EXPIRES_IN`: JWT token expiration time in hours
+- `COOKIE_DOMAIN`: Domain for authentication cookies
+- `ALLOWED_ORIGINS`: CORS allowed origins (comma-separated)
+- `GIN_MODE`: Gin framework mode (debug/release, set in Makefile)
 
-- `POST /posts/:id/replies` - Create reply (requires auth)
-- `DELETE /posts/:id` - Delete post(reply) (requires auth)
-  - Users with role 0 can only delete their own posts/replies
-  - Users with role 1 or 2 can delete any post/reply regardless of ownership
+# API Documentation
 
-### Reactions
+## Base URL
 
-- `POST /posts/:id/like` - Like post (requires auth)
-- `POST /posts/:id/dislike` - Dislike post (requires auth)
+`/api/v1`
 
-- `POST /posts/:id/unlike` - Unlike post (requires auth)
-- `POST /posts/:id/undislike` - Undislike post (requires auth)
+**Note:** Any path outside of `/api/v1` serves files from the `static` folder if they exist. This is typically used to serve frontend assets such as HTML, CSS, JavaScript files, and images stored in the `static/` directory.
 
-### Messages
+## Authentication
 
-All message endpoints require authentication.
+Endpoints related to user authentication and token management.
 
-- `GET /messages` - Get list of all conversations for the authenticated user
+| Method | Endpoint                | Parameters                                 | Description                                                                         |
+| ------ | ----------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------- |
+| POST   | `/auth/register`        | Body: `{username, password, universityId}` | Registers a new user.                                                               |
+| POST   | `/auth/login`           | Body: `{username, password}`               | Authenticate the user and return user information. Also, create a token and cookie. |
+| POST   | `/auth/logout`          | None                                       | Logs out the current user (requires authentication) and also deletes the cookie.    |
+| GET    | `/auth/token-info`      | None                                       | Retrieves information about the current token (requires auth).                      |
+| POST   | `/auth/refresh-token`   | None                                       | Refreshes the authentication token (requires auth).                                 |
+| POST   | `/users/password/reset` | Body: `{currentPassword, newPassword}`     | Resets the password for the authenticated user (requires auth).                     |
 
-  - Returns a summary of each conversation with just the last message
+- Most endpoints require authentication. The token obtained from `/auth/login` is sent via a cookie named `token`.
 
-- `GET /messages/unread-count` - Get total number of unread messages across all conversations
+## User Management
 
-  - Returns: `{"unreadCount": 5}`
+Endpoints for managing user accounts and roles.
 
-- `GET /messages/:username` - Get conversation with specific user
+| Method | Endpoint                           | Parameters                                       | Description                                                                                           |
+| ------ | ---------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| GET    | `/users`                           | None                                             | Returns a list of all users. (requires admin)                                                         |
+| GET    | `/users/{username}`                | Path: username                                   | Retrieves details of a specific user.                                                                 |
+| GET    | `/users/check-username/{username}` | Path: username                                   | Checks if a username is available.                                                                    |
+| DELETE | `/users/{id}`                      | Path: id, Body: `{password}` (for self-deletion) | Deletes a user account. Users can delete their own account with password; admins can delete any user. |
+| PUT    | `/users/privacy`                   | Body: `{isPrivate: boolean}`                     | Updates the profile privacy setting (requires auth).                                                  |
+| PUT    | `/admin/users/{username}/role`     | Path: username, Body: `{role:0\|1}`              | Updates a user's role (requires admin authorization).                                                 |
 
-  - Returns the conversation if it exists
-  - Returns a 410 (Gone) if the conversation was deleted by the authenticated user
-  - Returns a 400 (Bad Request) if the authenticated user tries to get a conversation with themselves
+- User roles:
+  - 0: Regular user
+  - 1: Moderator
+  - 2: Admin
+- Certain actions require specific roles (e.g., deleting other users' posts, changing roles).
 
-- `POST /messages/:username` - Send a message to a specific user
+## Posts
 
-  - Request body: `{"content": "Message content"}`
-  - Creates a new conversation if one doesn't exist
-  - Returns a 400 (Bad Request) if the message content exceeds 500 characters
-  - Returns a 400 (Bad Request) if the authenticated user tries to message themselves
-  - Returns a 404 (Not Found) if the target user doesn't exist
+Endpoints for creating, retrieving, and interacting with posts.
 
-- `POST /messages/:username/read` - Mark all messages in a conversation as read
+| Method | Endpoint                           | Parameters                                   | Description                                                                                                               |
+| ------ | ---------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| POST   | `/posts`                           | Body: `{content, [universityId], [replyTo]}` | Creates a new post or reply. If replyTo is provided, it's a reply; if universityId is provided, it's for that university. |
+| POST   | `/posts/{id}/like`                 | Path: id                                     | Likes a post (requires auth).                                                                                             |
+| POST   | `/posts/{id}/unlike`               | Path: id                                     | Removes a like from a post (requires auth).                                                                               |
+| POST   | `/posts/{id}/dislike`              | Path: id                                     | Dislikes a post (requires auth).                                                                                          |
+| POST   | `/posts/{id}/undislike`            | Path: id                                     | Removes a dislike from a post (requires auth).                                                                            |
+| DELETE | `/posts/{id}`                      | Path: id                                     | Deletes a post. Users can delete their own posts; moderators and admins can delete any post.                              |
+| GET    | `/posts`                           | None                                         | Retrieves all posts (home feed). It takes a parameter like `?page=1` and returns 50 posts each time.                      |
+| GET    | `/users/{username}/posts`          | Path: username                               | Retrieves all posts (home feed). It takes a parameter like `?page=1` and returns 50 posts each time.                      |
+| GET    | `/posts/{id}`                      | Path: id                                     | Retrieves a specific post.                                                                                                |
+| GET    | `/posts/{id}/replies`              | Path: id                                     | Retrieves all posts (home feed). It takes a parameter like `?page=1` and returns 50 posts each time.                      |
+| GET    | `/posts/university/{universityId}` | Path: universityId                           | Retrieves all posts (home feed). It takes a parameter like `?page=1` and returns 50 posts each time.                      |
 
-  - Returns a 404 (Not Found) if the target user doesn't exist
-  - Returns a 400 (Bad Request) if the conversation was deleted by the authenticated user
+- To post to a different university, include `universityId` in the POST `/posts` body.
 
-- `DELETE /messages/:username` - Delete conversation with specific user
-  - Marks the conversation as deleted for the authenticated user only
-  - The other participant can still see the conversation
-  - Returns a 400 (Bad Request) if the conversation was already deleted by the authenticated user
-  - Returns a 400 (Bad Request) if the authenticated user tries to delete a conversation with themselves
+## Messages
 
-#### Message limits and behavior
+Endpoints for private messaging between users.
 
-- Each conversation stores a maximum of 100 messages
-- When this limit is exceeded, the oldest messages are automatically removed
-- Messages cannot be individually deleted, only entire conversations
-- Deleted conversations are hidden from the user who deleted them but remain visible to the other user
-- If both users delete a conversation, it is permanently removed from the database
+| Method | Endpoint                    | Parameters                                | Description                                                                           |
+| ------ | --------------------------- | ----------------------------------------- | ------------------------------------------------------------------------------------- |
+| GET    | `/messages`                 | None                                      | Retrieves a list of all conversations for the authenticated user.                     |
+| GET    | `/messages/{username}`      | Path: username                            | Retrieves the conversation with a specific user. Returns 410 if deleted, 400 if self. |
+| POST   | `/messages/{username}`      | Path: username, Body: `{content: string}` | Sends a message to a specific user. Creates a new conversation if needed.             |
+| DELETE | `/messages/{username}`      | Path: username                            | Deletes the conversation with a specific user (marks as deleted for the user).        |
+| GET    | `/messages/unread-count`    | None                                      | Retrieves the total number of unread messages across all conversations.               |
+| POST   | `/messages/{username}/read` | Path: username                            | Marks all messages in a conversation as read.                                         |
 
-### Notifications
+- Message conversations are limited to 100 messages; older messages are automatically deleted.
 
-All notification endpoints require authentication.
+## Notifications
 
-- `GET /notifications` - Get all notifications for the authenticated user
+Endpoints for managing user notifications.
 
-- `GET /notifications/unread-count` - Get the count of unread notifications
+| Method | Endpoint                       | Parameters | Description                                                       |
+| ------ | ------------------------------ | ---------- | ----------------------------------------------------------------- |
+| GET    | `/notifications`               | None       | Retrieves all notifications for the user (last 50, unread first). |
+| GET    | `/notifications/unread-count`  | None       | Retrieves the count of unread notifications.                      |
+| POST   | `/notifications/{id}`          | Path: id   | Marks a specific notification as read.                            |
+| POST   | `/notifications/mark-all-read` | None       | Marks all notifications as read.                                  |
+| DELETE | `/notifications/delete-all`    | None       | Deletes all notifications.                                        |
 
-- `POST /notifications/:id` - Mark a notification as read
+- Notifications are limited to the last 50; older notifications are automatically deleted.
 
-- `POST /notifications/mark-all-read` - Mark all notifications as read for the authenticated user
+## Avatar
 
-- `DELETE /notifications/delete-all` - Alternative endpoint to delete all notifications
+Endpoints for managing user avatars.
 
-### Contact
+| Method | Endpoint                   | Parameters                                        | Description                                                 |
+| ------ | -------------------------- | ------------------------------------------------- | ----------------------------------------------------------- |
+| GET    | `/users/{username}/avatar` | Path: username                                    | Retrieves a user's avatar (respects privacy settings).      |
+| POST   | `/users/{username}/avatar` | Path: username, Body: JSON with avatar properties | Updates the user's avatar (requires auth, only own avatar). |
 
-- `POST /contact` - Submit a contact form
+## Contact
 
-  - Request body:
-    ```json
-    {
-      "name": "Your Name",
-      "email": "your.email@example.com",
-      "subject": "Genel",
-      "message": "Your message here"
-    }
-    ```
-  - The `subject` field must be one of: "Genel", "Destek", "Öneri", "Teknik", "Şikayet"
-  - Responses:
-    - Success:
-      ```json
-      {
-        "message": "Mesajınız gönderildi. En kısa sürede size dönüş yapacağız."
-      }
-      ```
-    - Invalid email:
-      ```json
-      {
-        "error": "Geçerli bir e-posta adresi girmelisiniz"
-      }
-      ```
-    - Invalid subject:
-      ```json
-      {
-        "error": "Konu, şu seçeneklerden biri olmalıdır: Genel, Destek, Öneri, Teknik, Şikayet"
-      }
-      ```
+Endpoint for submitting a contact form.
 
-### Health
+| Method | Endpoint   | Parameters                              | Description                                                                                      |
+| ------ | ---------- | --------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| POST   | `/contact` | Body: `{name, email, subject, message}` | Submits a contact form. Subject must be one of: "Genel", "Destek", "Öneri", "Teknik", "Şikayet". |
 
-- `GET /health` - Check API health status
-  - Returns basic system health information
-  - No authentication required
-  - Example response:
-    ```json
-    {
-      "status": "up",
-      "timestamp": "2023-05-01T12:34:56Z"
-    }
-    ```
+## Health
+
+Endpoint to check the API's health status.
+
+| Method | Endpoint  | Parameters | Description                     |
+| ------ | --------- | ---------- | ------------------------------- |
+| GET    | `/health` | None       | Checks the API's health status. |
