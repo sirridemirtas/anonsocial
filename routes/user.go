@@ -9,7 +9,7 @@ import (
 func UserRoutes(rg *gin.RouterGroup) {
 	userGroup := rg.Group("/users")
 	{
-		userGroup.GET("", controllers.GetUsers)
+		userGroup.GET("", middleware.Auth(2), controllers.GetUsers)
 		userGroup.GET("/:username", controllers.GetUser)
 		userGroup.GET("/check-username/:username", controllers.CheckUsernameAvailability)
 		//userGroup.PUT("/:id", middleware.Auth(0), controllers.UpdateUser)
