@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirridemirtas/anonsocial/models"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -72,68 +71,6 @@ func GetFeedPosts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, postResponses)
-}
-
-// GetFeedPostReplies returns replies with reaction counts
-func GetFeedPostReplies(c *gin.Context) {
-	pageNum, pageSize, err := getPaginationParams(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz sayfa parametresi"})
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	// Get username for reaction status
-	username := getUsernameFromRequest(c)
-
-	postId, err := primitive.ObjectIDFromHex(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz ID"}) // Invalid ID
-		return
-	}
-
-	opts := options.Find().
-		SetSort(bson.D{{Key: "createdAt", Value: 1}}).
-		SetSkip(int64((pageNum - 1) * pageSize)).
-		SetLimit(int64(pageSize))
-
-	cursor, err := postCollection.Find(ctx, bson.M{"replyTo": postId}, opts)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	defer cursor.Close(ctx)
-
-	// Initialize an empty array (not null)
-	replies := []models.Post{}
-	if err = cursor.All(ctx, &replies); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	// Transform replies to include reaction counts and respect privacy settings
-	var replyResponses []models.PostResponse
-	for _, reply := range replies {
-		// Check if reply owner is private and requester is not the owner
-		var isPrivate bool
-		if reply.Username != username {
-			var user models.User
-			err := userCollection.FindOne(ctx, bson.M{"username": reply.Username}).Decode(&user)
-			if err == nil && user.IsPrivate {
-				isPrivate = true
-			}
-		}
-
-		response := reply.ToResponse(username)
-		if isPrivate {
-			response.Username = "" // Clear username for private users
-		}
-		replyResponses = append(replyResponses, response)
-	}
-
-	c.JSON(http.StatusOK, replyResponses)
 }
 
 // GetFeedUserPosts returns a user's posts with reaction counts

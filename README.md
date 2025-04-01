@@ -142,21 +142,22 @@ Endpoints for managing user accounts and roles.
 
 Endpoints for creating, retrieving, and interacting with posts.
 
-| Method | Endpoint                           | Parameters                                   | Description                                                                                                               |
-| ------ | ---------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| POST   | `/posts`                           | Body: `{content, [universityId], [replyTo]}` | Creates a new post or reply. If replyTo is provided, it's a reply; if universityId is provided, it's for that university. |
-| POST   | `/posts/{id}/like`                 | Path: id                                     | Likes a post (requires auth).                                                                                             |
-| POST   | `/posts/{id}/unlike`               | Path: id                                     | Removes a like from a post (requires auth).                                                                               |
-| POST   | `/posts/{id}/dislike`              | Path: id                                     | Dislikes a post (requires auth).                                                                                          |
-| POST   | `/posts/{id}/undislike`            | Path: id                                     | Removes a dislike from a post (requires auth).                                                                            |
-| DELETE | `/posts/{id}`                      | Path: id                                     | Deletes a post. Users can delete their own posts; moderators and admins can delete any post.                              |
-| GET    | `/posts`                           | None                                         | Retrieves all posts (home feed). It takes a parameter like `?page=1` and returns 50 posts each time.                      |
-| GET    | `/users/{username}/posts`          | Path: username                               | Retrieves all posts (home feed). It takes a parameter like `?page=1` and returns 50 posts each time.                      |
-| GET    | `/posts/{id}`                      | Path: id                                     | Retrieves a specific post.                                                                                                |
-| GET    | `/posts/{id}/replies`              | Path: id                                     | Retrieves all posts (home feed). It takes a parameter like `?page=1` and returns 50 posts each time.                      |
-| GET    | `/posts/university/{universityId}` | Path: universityId                           | Retrieves all posts (home feed). It takes a parameter like `?page=1` and returns 50 posts each time.                      |
+| Method | Endpoint                           | Parameters                                   | Description                                                                                                |
+| ------ | ---------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| POST   | `/posts`                           | Body: `{content, [universityId], [replyTo]}` | Creates a new post or reply. If replyTo is provided, it creates a reply to the specified post.             |
+| POST   | `/posts/{id}/like`                 | Path: id                                     | Likes a post (requires auth).                                                                              |
+| POST   | `/posts/{id}/unlike`               | Path: id                                     | Removes a like from a post (requires auth).                                                                |
+| POST   | `/posts/{id}/dislike`              | Path: id                                     | Dislikes a post (requires auth).                                                                           |
+| POST   | `/posts/{id}/undislike`            | Path: id                                     | Removes a dislike from a post (requires auth).                                                             |
+| DELETE | `/posts/{id}`                      | Path: id                                     | Deletes a post or reply. Users can delete their own content; moderators and admins can delete any content. |
+| GET    | `/posts`                           | Query: `page=number`                         | Retrieves posts for the home feed. Returns 50 posts per page.                                              |
+| GET    | `/users/{username}/posts`          | Path: username, Query: `page=number`         | Retrieves posts by a specific user. Returns 50 posts per page.                                             |
+| GET    | `/posts/{id}`                      | Path: id                                     | Retrieves a specific post.                                                                                 |
+| GET    | `/posts/{id}/replies`              | Path: id, Query: `page=number`               | Retrieves replies to a specific post. Returns 50 replies per page.                                         |
+| GET    | `/posts/university/{universityId}` | Path: universityId, Query: `page=number`     | Retrieves posts for a specific university. Returns 50 posts per page.                                      |
 
-- To post to a different university, include `universityId` in the POST `/posts` body.
+- To post to a specific university, include `universityId` in the POST `/posts` body.
+- Replies are treated as posts with a `replyTo` field, and are deleted using the same endpoint as regular posts.
 
 ## Messages
 

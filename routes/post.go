@@ -12,7 +12,7 @@ func PostRoutes(rg *gin.RouterGroup) {
 		// Public routes with optional auth to handle privacy
 		//posts.GET("", middleware.OptionalAuth(), controllers.GetPosts)
 		posts.GET("/:id", middleware.OptionalAuth(), controllers.GetPost)
-		//posts.GET("/:id/replies", middleware.OptionalAuth(), controllers.GetPostReplies)
+		posts.GET("/:id/replies", middleware.OptionalAuth(), controllers.GetPostReplies)
 		//posts.GET("/university/:universityId", middleware.OptionalAuth(), controllers.GetPostsByUniversity)
 
 		// Authenticated routes

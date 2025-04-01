@@ -1,0 +1,915 @@
+{
+  "info": {
+    "_postman_id": "a8b47e59-cc8d-4bf4-b5db-fd9891d1efb9",
+    "name": "AnonSocial API",
+    "description": "A collection for testing the AnonSocial API endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1 - Authentication (Phase 1)",
+      "description": "Initial authentication endpoints",
+      "item": [
+        {
+          "name": "1.1 - Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{testUsername}}\",\n    \"password\": \"{{testPassword}}\",\n    \"universityId\": \"{{universityId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Creates a new user account"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"User registered successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.2 - Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{testUsername}}\",\n    \"password\": \"{{testPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticates user and returns JWT token as cookie"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Login successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.expect(jsonData).to.have.property('role');",
+                  "    pm.expect(jsonData).to.have.property('universityId');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3 - Get Token Information",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/token-info?refresh=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "token-info"],
+              "query": [
+                {
+                  "key": "refresh",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Returns information about the current authentication token"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Token information retrieved\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('userId');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.expect(jsonData).to.have.property('role');",
+                  "    pm.expect(jsonData).to.have.property('universityId');",
+                  "    pm.expect(jsonData).to.have.property('expiresAt');",
+                  "    pm.expect(jsonData).to.have.property('refreshed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2 - User Profile Management",
+      "description": "User management endpoints",
+      "item": [
+        {
+          "name": "2.1 - Get User by Username",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{testUsername}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{testUsername}}"]
+            },
+            "description": "Retrieves user profile information"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"User profile information retrieved\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.expect(jsonData).to.have.property('universityId');",
+                  "    pm.expect(jsonData).to.have.property('isPrivate');",
+                  "    pm.expect(jsonData).to.have.property('role');",
+                  "    pm.expect(jsonData).to.have.property('createdAt');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2 - Check Username Availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/check-username/{{testUsername}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "check-username", "{{testUsername}}"]
+            },
+            "description": "Checks if a username is available and valid"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Username availability status retrieved\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('available');",
+                  "    pm.expect(jsonData).to.have.property('valid');",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.3 - Update User Privacy Setting",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"isPrivate\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/privacy",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "privacy"]
+            },
+            "description": "Updates the privacy setting for the authenticated user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Privacy setting updated\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql(\"Privacy setting updated\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3 - Avatar Management",
+      "description": "Avatar management endpoints",
+      "item": [
+        {
+          "name": "3.1 - Update User Avatar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"faceColor\": \"#FFB6C1\",\n    \"earSize\": \"small\",\n    \"hairStyle\": \"normal\",\n    \"hairColor\": \"#8B4513\",\n    \"hatStyle\": \"none\",\n    \"hatColor\": \"#1E90FF\",\n    \"eyeStyle\": \"circle\",\n    \"glassesStyle\": \"none\",\n    \"noseStyle\": \"short\",\n    \"mouthStyle\": \"laugh\",\n    \"shirtStyle\": \"hoody\",\n    \"shirtColor\": \"#32CD32\",\n    \"bgColor\": \"#F0F8FF\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{testUsername}}/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{testUsername}}", "avatar"]
+            },
+            "description": "Creates or updates the user's avatar (only own avatar)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200 or 201\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "",
+                  "pm.test(\"Avatar updated or created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.be.oneOf([\"Avatar güncellendi\", \"Avatar oluşturuldu\"]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.2 - Get User Avatar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{testUsername}}/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{testUsername}}", "avatar"]
+            },
+            "description": "Retrieves a user's avatar (respects privacy settings)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Avatar data retrieved\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('faceColor');",
+                  "    pm.expect(jsonData).to.have.property('earSize');",
+                  "    pm.expect(jsonData).to.have.property('hairStyle');",
+                  "    pm.expect(jsonData).to.have.property('hairColor');",
+                  "    pm.expect(jsonData).to.have.property('hatStyle');",
+                  "    pm.expect(jsonData).to.have.property('hatColor');",
+                  "    pm.expect(jsonData).to.have.property('eyeStyle');",
+                  "    pm.expect(jsonData).to.have.property('glassesStyle');",
+                  "    pm.expect(jsonData).to.have.property('noseStyle');",
+                  "    pm.expect(jsonData).to.have.property('mouthStyle');",
+                  "    pm.expect(jsonData).to.have.property('shirtStyle');",
+                  "    pm.expect(jsonData).to.have.property('shirtColor');",
+                  "    pm.expect(jsonData).to.have.property('bgColor');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4 - Post Management",
+      "description": "Post creation and retrieval",
+      "item": [
+        {
+          "name": "4.1 - Create New Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"content\": \"This is a test post created via Postman!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts"]
+            },
+            "description": "Creates a new post (requires authentication)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Post created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.expect(jsonData).to.have.property('content');",
+                  "    pm.expect(jsonData).to.have.property('createdAt');",
+                  "    // Store the post ID for future tests",
+                  "    if (jsonData.id) {",
+                  "        pm.environment.set(\"postId\", jsonData.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.2 - Get Post by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{postId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "{{postId}}"]
+            },
+            "description": "Retrieves a specific post by its ID"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code indicates result\", function () {",
+                  "    // Could be 200 (success), 400 (invalid ID), or 404 (not found)",
+                  "    if (pm.response.code === 200) {",
+                  "        var jsonData = pm.response.json();",
+                  "        pm.expect(jsonData).to.have.property('id');",
+                  "        pm.expect(jsonData).to.have.property('username');",
+                  "        pm.expect(jsonData).to.have.property('content');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4.3 - Create Reply to Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"content\": \"This is a test reply to the post!\",\n    \"replyTo\": \"{{postId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts"]
+            },
+            "description": "Creates a new reply to an existing post"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Reply created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('replyTo');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.expect(jsonData).to.have.property('content');",
+                  "    pm.expect(jsonData).to.have.property('createdAt');",
+                  "    // Store the reply ID for future tests",
+                  "    if (jsonData.id) {",
+                  "        pm.environment.set(\"replyId\", jsonData.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5 - Post Interaction",
+      "description": "Post deletion endpoints",
+      "item": [
+        {
+          "name": "5.1 - Delete Reply",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{replyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "{{replyId}}"]
+            },
+            "description": "Deletes a reply (requires authentication, only creator or moderator)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Reply deleted successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.include('deleted');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.2 - Delete Post",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{postId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "{{postId}}"]
+            },
+            "description": "Deletes a post (requires authentication, only creator or moderator)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Post deleted successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.include('deleted');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "6 - Password Management",
+      "description": "Password update operations",
+      "item": [
+        {
+          "name": "6.1 - Reset User Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"currentPassword\": \"{{testPassword}}\",\n    \"newPassword\": \"NewSecurePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/password/reset",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "password", "reset"]
+            },
+            "description": "Changes password for authenticated user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Password changed successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql(\"Password changed successfully\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.2 - Login with New Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{testUsername}}\",\n    \"password\": \"NewSecurePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticates user with new password after reset"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Login with new password successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.expect(jsonData).to.have.property('role');",
+                  "    pm.expect(jsonData).to.have.property('universityId');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "7 - Authentication (Phase 2)",
+      "description": "Verify authentication after password reset",
+      "item": [
+        {
+          "name": "7.1 - Get Token Information",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/token-info?refresh=true",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "token-info"],
+              "query": [
+                {
+                  "key": "refresh",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Verifies token information after password reset"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Token information verified after reset\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('userId');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.expect(jsonData).to.have.property('role');",
+                  "    pm.expect(jsonData).to.have.property('universityId');",
+                  "    pm.expect(jsonData).to.have.property('expiresAt');",
+                  "    pm.expect(jsonData).to.have.property('refreshed');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "8 - Admin Operations",
+      "description": "Administrative operations (requires admin privileges)",
+      "item": [
+        {
+          "name": "8.1 - Update User Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"role\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/users/{{targetUsername}}/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "users", "{{targetUsername}}", "role"]
+            },
+            "description": "Updates a user's role (admin only)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code indicates result\", function () {",
+                  "    // Could be 200 (success), 400 (invalid input), 403 (not admin), or 404 (user not found)",
+                  "    if (pm.response.code === 200) {",
+                  "        var jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.message).to.eql(\"Kullanıcı yetkisi güncellendi\");",
+                  "    } else if (pm.response.code === 403) {",
+                  "        pm.test.skip(\"Not an admin account - forbidden\");",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "9 - Cleanup",
+      "description": "Final cleanup operations",
+      "item": [
+        {
+          "name": "9.1 - Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Clears authentication token"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Logout successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql(\"Çıkış başarılı\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "9.2 - Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{testUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{testUserId}}"]
+            },
+            "description": "Deletes a user by ID (requires moderator role)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"User deleted successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql(\"User deleted successfully\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 - Contact",
+      "description": "Contact form submission",
+      "item": [
+        {
+          "name": "Submit Contact Form",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test@example.com\",\n    \"subject\": \"Genel\",\n    \"message\": \"This is a test message for the contact form.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contact",
+              "host": ["{{baseUrl}}"],
+              "path": ["contact"]
+            },
+            "description": "Submits a contact form with feedback"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Form submitted successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Generate random test values if not present",
+          "if (!pm.environment.get(\"testUsername\")) {",
+          "    pm.environment.set(\"testUsername\", \"testuser\" + Math.floor(Math.random() * 100000));",
+          "}",
+          "if (!pm.environment.get(\"testPassword\")) {",
+          "    pm.environment.set(\"testPassword\", \"SecurePass\" + Math.floor(Math.random() * 100000));",
+          "}",
+          "if (!pm.environment.get(\"universityId\")) {",
+          "    // Use a valid predefined universityId instead of random generation",
+          "    pm.environment.set(\"universityId\", \"115373\");",
+          "}",
+          "if (!pm.environment.get(\"targetUsername\")) {",
+          "    pm.environment.set(\"targetUsername\", \"targetuser\" + Math.floor(Math.random() * 100000));",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Save token from Set-Cookie header if present",
+          "if (pm.response.headers.has(\"Set-Cookie\")) {",
+          "    var cookieHeader = pm.response.headers.get(\"Set-Cookie\");",
+          "    if (cookieHeader && cookieHeader.includes(\"token=\")) {",
+          "        var tokenMatch = cookieHeader.match(/token=([^;]+)/);",
+          "        if (tokenMatch && tokenMatch[1]) {",
+          "            pm.environment.set(\"token\", tokenMatch[1]);",
+          "        }",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,873 @@
+openapi: 3.0.0
+info:
+  title: AnonSocial API
+  description: API documentation for the AnonSocial platform
+  version: 1.0.0
+  contact:
+    name: AnonSocial Support
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.anonsocial.com
+    description: Production server
+
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+  
+  schemas:
+    User:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "user123"
+          description: User's unique username (3-16 alphanumeric characters)
+        universityId:
+          type: string
+          description: User's university identifier
+        isPrivate:
+          type: boolean
+          description: Whether the user profile is private
+        role:
+          type: integer
+          enum: [0, 1, 2]
+          description: User's role (0=Regular, 1=Moderator, 2=Admin)
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+
+    Avatar:
+      type: object
+      required:
+        - faceColor
+        - earSize
+        - hairStyle
+        - hairColor
+        - hatStyle
+        - hatColor
+        - eyeStyle
+        - glassesStyle
+        - noseStyle
+        - mouthStyle
+        - shirtStyle
+        - shirtColor
+        - bgColor
+      properties:
+        faceColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$"
+          example: "#FFB6C1"
+        earSize:
+          type: string
+          enum: [small, big]
+        hairStyle:
+          type: string
+          enum: [normal, thick, mohawk, womanLong, womanShort]
+        hairColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$"
+          example: "#8B4513"
+        hatStyle:
+          type: string
+          enum: [none, beanie, turban]
+        hatColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$"
+          example: "#1E90FF"
+        eyeStyle:
+          type: string
+          enum: [circle, oval, smile]
+        glassesStyle:
+          type: string
+          enum: [none, round, square]
+        noseStyle:
+          type: string
+          enum: [short, long, round]
+        mouthStyle:
+          type: string
+          enum: [laugh, smile, peace]
+        shirtStyle:
+          type: string
+          enum: [hoody, short, polo]
+        shirtColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$"
+          example: "#32CD32"
+        bgColor:
+          type: string
+          pattern: "^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$"
+          example: "#F0F8FF"
+
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Post unique identifier
+        username:
+          type: string
+          description: Username of post creator
+        content:
+          type: string
+          description: Post content
+        createdAt:
+          type: string
+          format: date-time
+          description: Post creation timestamp
+        userIsPrivate:
+          type: boolean
+          description: Whether the post creator's profile is private
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+        errors:
+          type: array
+          description: List of validation errors
+          items:
+            type: string
+        message:
+          type: string
+          description: Error message (alternative format)
+
+    Contact:
+      type: object
+      required:
+        - name
+        - email
+        - subject
+        - message
+      properties:
+        name:
+          type: string
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        subject:
+          type: string
+          enum: [Genel, Destek, Öneri, Teknik, Şikayet]
+        message:
+          type: string
+          example: "Hello, I need some help with..."
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      description: Creates a new user account
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+                - universityId
+              properties:
+                username:
+                  type: string
+                  example: "user123"
+                  description: 3-16 alphanumeric characters
+                password:
+                  type: string
+                  format: password
+                  example: "securePassword123"
+                universityId:
+                  type: string
+                  example: "uni123"
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  username:
+                    type: string
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Username already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Kullanıcı adı zaten alınmış"
+  
+  /auth/login:
+    post:
+      summary: Login to account
+      description: Authenticates user and returns JWT token as cookie
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  example: "user123"
+                password:
+                  type: string
+                  format: password
+                  example: "securePassword123"
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: token=jwt_token_here; Path=/; Max-Age=86400; HttpOnly
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  username:
+                    type: string
+                  role:
+                    type: integer
+                  universityId:
+                    type: string
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Kullanıcı adı veya şifre hatalı"
+  
+  /auth/logout:
+    post:
+      summary: Logout current user
+      description: Clears authentication token
+      tags:
+        - Authentication
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Çıkış başarılı"
+  
+  /auth/token-info:
+    get:
+      summary: Get token information
+      description: Returns information about the current authentication token
+      tags:
+        - Authentication
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: refresh
+          schema:
+            type: string
+            enum: ['true', 'false']
+          description: Whether to refresh user data from database
+      responses:
+        '200':
+          description: Token information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  username:
+                    type: string
+                  role:
+                    type: integer
+                  universityId:
+                    type: string
+                  expiresAt:
+                    type: string
+                    format: date-time
+                  refreshed:
+                    type: boolean
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /users:
+    get:
+      summary: Get all users
+      description: Admin only - retrieves all users in the system
+      tags:
+        - Users
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '403':
+          description: Forbidden - insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /users/{username}:
+    get:
+      summary: Get user by username
+      description: Retrieves user profile information
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Username of the user to retrieve
+      responses:
+        '200':
+          description: User profile information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /users/check-username/{username}:
+    get:
+      summary: Check username availability
+      description: Checks if a username is available and valid
+      tags:
+        - Users
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Username to check
+      responses:
+        '200':
+          description: Username availability status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  available:
+                    type: boolean
+                  valid:
+                    type: boolean
+                  message:
+                    type: string
+  
+  /users/{id}:
+    delete:
+      summary: Delete user
+      description: Deletes a user by ID (requires moderator role)
+      tags:
+        - Users
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: User ID to delete
+      responses:
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '403':
+          description: Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /users/privacy:
+    put:
+      summary: Update user privacy setting
+      description: Updates the privacy setting for the authenticated user
+      tags:
+        - Users
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - isPrivate
+              properties:
+                isPrivate:
+                  type: boolean
+      responses:
+        '200':
+          description: Privacy setting updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /users/password/reset:
+    post:
+      summary: Reset user password
+      description: Changes password for authenticated user
+      tags:
+        - Users
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                newPassword:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Current password incorrect
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Mevcut şifre yanlış"
+  
+  /users/{username}/avatar:
+    get:
+      summary: Get user avatar
+      description: Retrieves a user's avatar (respects privacy settings)
+      tags:
+        - Avatar
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Username of the avatar owner
+      responses:
+        '200':
+          description: Avatar data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Avatar'
+        '403':
+          description: User profile is private
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Avatar not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      summary: Update user avatar
+      description: Creates or updates the user's avatar (only own avatar)
+      tags:
+        - Avatar
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Username (must match authenticated user)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Avatar'
+      responses:
+        '200':
+          description: Avatar updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Avatar güncellendi"
+        '201':
+          description: Avatar created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Avatar oluşturuldu"
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Cannot modify other users' avatars
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Sadece kendi avatarınızı güncelleyebilirsiniz"
+  
+  /posts/{id}:
+    get:
+      summary: Get post by ID
+      description: Retrieves a specific post by its ID
+      tags:
+        - Posts
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Post ID to retrieve
+      responses:
+        '200':
+          description: Post data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Post'
+        '400':
+          description: Invalid ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      summary: Delete post or reply
+      description: Deletes a post or reply by ID (only creator or moderator)
+      tags:
+        - Posts
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Post or reply ID to delete
+      responses:
+        '200':
+          description: Post or reply deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Post deleted successfully"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden - not post owner or moderator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /posts:
+    post:
+      summary: Create new post
+      description: Creates a new post (requires authentication)
+      tags:
+        - Posts
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  example: "This is my new post content!"
+                  description: Content of the post
+                replyTo:
+                  type: string
+                  example: "60d21b4667d0d8992e610c85"
+                  description: ID of the post being replied to (only when creating a reply)
+      responses:
+        '201':
+          description: Post or reply created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    description: ID of the created post or reply
+                  username:
+                    type: string
+                    description: Username of the creator
+                  content:
+                    type: string
+                    description: Content
+                  createdAt:
+                    type: string
+                    format: date-time
+                    description: Creation timestamp
+                  replyTo:
+                    type: string
+                    description: ID of the post being replied to (only for replies)
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Parent post not found (when replying)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /admin/users/{username}/role:
+    put:
+      summary: Update user role
+      description: Updates a user's role (admin only)
+      tags:
+        - Admin
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Username of the user to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  type: integer
+                  enum: [0, 1]
+                  description: "0=Regular user, 1=Moderator"
+      responses:
+        '200':
+          description: Role updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Kullanıcı yetkisi güncellendi"
+        '400':
+          description: Invalid input or role value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Admin privileges required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Bu işlem için yönetici yetkileri gerekiyor"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /contact:
+    post:
+      summary: Submit contact form
+      description: Submits a contact form with feedback
+      tags:
+        - Contact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Contact'
+      responses:
+        '200':
+          description: Form submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
