@@ -33,11 +33,12 @@ func main() {
 	routes.MessageRoutes(apiV1)
 	routes.NotificationRoutes(apiV1)
 	routes.AdminRoutes(apiV1)
+
 	routes.StaticRoutes(router)
 
-	router.POST("/api/v1/contact", controllers.SubmitContactForm)
+	apiV1.POST("/contact", controllers.SubmitContactForm)
 
-	router.GET("/api/v1/health", func(c *gin.Context) {
+	apiV1.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"status":  "ok",
 			"message": "Server is running",

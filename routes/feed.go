@@ -7,12 +7,15 @@ import (
 )
 
 func FeedRoutes(rg *gin.RouterGroup) {
+	feeds := rg.Group("/feeds")
+	rg.Use(middleware.OptionalAuth())
+
 	// Home feed, includes posts from all users
-	rg.GET("/posts", middleware.OptionalAuth(), controllers.GetFeedPosts)
+	feeds.GET("/home", controllers.GetHomeFeed)
 
 	// University feed, includes posts from specific university
-	rg.GET("/posts/university/:universityId", controllers.GetFeedUniversityPosts)
+	feeds.GET("/universities/:universityId", controllers.GetUniversityFeed)
 
 	// User feed, includes posts from specific user
-	rg.GET("/users/:username/posts", middleware.OptionalAuth(), middleware.OptionalAuth(), controllers.GetFeedUserPosts)
+	feeds.GET("/users/:username", controllers.GetUserFeed)
 }

@@ -17,8 +17,8 @@ const (
 	MaxPageSize     = 50
 )
 
-// GetFeedPosts returns posts with reaction counts
-func GetFeedPosts(c *gin.Context) {
+// GetHomeFeed returns posts with reaction counts
+func GetHomeFeed(c *gin.Context) {
 	pageNum, pageSize, err := getPaginationParams(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz sayfa parametresi"})
@@ -73,8 +73,8 @@ func GetFeedPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, postResponses)
 }
 
-// GetFeedUserPosts returns a user's posts with reaction counts
-func GetFeedUserPosts(c *gin.Context) {
+// GetUserFeed returns a user's posts with reaction counts
+func GetUserFeed(c *gin.Context) {
 	pageNum, pageSize, err := getPaginationParams(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz sayfa parametresi"})
@@ -134,8 +134,8 @@ func GetFeedUserPosts(c *gin.Context) {
 	c.JSON(http.StatusOK, postResponses)
 }
 
-// GetFeedUniversityPosts returns university posts with reaction counts
-func GetFeedUniversityPosts(c *gin.Context) {
+// GetUniversityFeed returns university posts with reaction counts
+func GetUniversityFeed(c *gin.Context) {
 	pageNum, pageSize, err := getPaginationParams(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Geçersiz sayfa parametresi"})

@@ -15,7 +15,7 @@ func UserRoutes(rg *gin.RouterGroup) {
 		//userGroup.PUT("/:id", middleware.Auth(0), controllers.UpdateUser)
 		userGroup.DELETE("/:id", middleware.Auth(1), controllers.DeleteUser)
 		userGroup.PUT("/privacy", middleware.Auth(0), controllers.UpdateUserPrivacy)
-		userGroup.POST("/password/reset", middleware.Auth(0), controllers.ResetPassword)
+		userGroup.PUT("/password/reset", middleware.Auth(0), controllers.ResetPassword)
 
 		// Avatar endpoints
 		userGroup.GET("/:username/avatar", middleware.OptionalAuth(), controllers.GetUserAvatar)

@@ -108,56 +108,55 @@ ALLOWED_ORIGINS=http://localhost:3000
 
 Endpoints related to user authentication and token management.
 
-| Method | Endpoint                | Parameters                                 | Description                                                                         |
-| ------ | ----------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------- |
-| POST   | `/auth/register`        | Body: `{username, password, universityId}` | Registers a new user.                                                               |
-| POST   | `/auth/login`           | Body: `{username, password}`               | Authenticate the user and return user information. Also, create a token and cookie. |
-| POST   | `/auth/logout`          | None                                       | Logs out the current user (requires authentication) and also deletes the cookie.    |
-| GET    | `/auth/token-info`      | None                                       | Retrieves information about the current token (requires auth).                      |
-| POST   | `/auth/refresh-token`   | None                                       | Refreshes the authentication token (requires auth).                                 |
-| POST   | `/users/password/reset` | Body: `{currentPassword, newPassword}`     | Resets the password for the authenticated user (requires auth).                     |
+| Method | Endpoint              | Parameters                                 | Description                                                                 |
+| ------ | --------------------- | ------------------------------------------ | --------------------------------------------------------------------------- |
+| POST   | `/auth/register`      | Body: `{username, password, universityId}` | Registers a new user.                                                       |
+| POST   | `/auth/login`         | Body: `{username, password}`               | Authenticates the user and returns user information with token and cookie.  |
+| POST   | `/auth/logout`        | None                                       | Logs out the current user (requires authentication) and deletes the cookie. |
+| GET    | `/auth/token-info`    | None                                       | Retrieves information about the current token (requires auth).              |
+| POST   | `/auth/refresh-token` | None                                       | Refreshes the authentication token (requires auth).                         |
 
 - Most endpoints require authentication. The token obtained from `/auth/login` is sent via a cookie named `token`.
 
 ## User Management
 
-Endpoints for managing user accounts and roles.
+Endpoints for managing user accounts and profiles.
 
-| Method | Endpoint                           | Parameters                                       | Description                                                                                           |
-| ------ | ---------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
-| GET    | `/users`                           | None                                             | Returns a list of all users. (requires admin)                                                         |
-| GET    | `/users/{username}`                | Path: username                                   | Retrieves details of a specific user.                                                                 |
-| GET    | `/users/check-username/{username}` | Path: username                                   | Checks if a username is available.                                                                    |
-| DELETE | `/users/{id}`                      | Path: id, Body: `{password}` (for self-deletion) | Deletes a user account. Users can delete their own account with password; admins can delete any user. |
-| PUT    | `/users/privacy`                   | Body: `{isPrivate: boolean}`                     | Updates the profile privacy setting (requires auth).                                                  |
-| PUT    | `/admin/users/{username}/role`     | Path: username, Body: `{role:0\|1}`              | Updates a user's role (requires admin authorization).                                                 |
-
-- User roles:
-  - 0: Regular user
-  - 1: Moderator
-  - 2: Admin
-- Certain actions require specific roles (e.g., deleting other users' posts, changing roles).
+| Method | Endpoint                           | Parameters                                        | Description                                                                                           |
+| ------ | ---------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| GET    | `/users`                           | None                                              | Returns a list of all users (requires admin).                                                         |
+| GET    | `/users/{username}`                | Path: username                                    | Retrieves details of a specific user.                                                                 |
+| GET    | `/users/check-username/{username}` | Path: username                                    | Checks if a username is available.                                                                    |
+| DELETE | `/users/{id}`                      | Path: id, Body: `{password}` (for self-deletion)  | Deletes a user account. Users can delete their own account with password; admins can delete any user. |
+| PUT    | `/users/privacy`                   | Body: `{isPrivate: boolean}`                      | Updates the profile privacy setting (requires auth).                                                  |
+| PUT    | `/users/password/reset`            | Body: `{currentPassword, newPassword}`            | Resets the password for the authenticated user (requires auth).                                       |
+| GET    | `/users/{username}/avatar`         | Path: username                                    | Retrieves a user's avatar (respects privacy settings).                                                |
+| POST   | `/users/{username}/avatar`         | Path: username, Body: JSON with avatar properties | Updates the user's avatar (requires auth, only own avatar).                                           |
 
 ## Posts
 
 Endpoints for creating, retrieving, and interacting with posts.
 
-| Method | Endpoint                           | Parameters                                   | Description                                                                                                |
-| ------ | ---------------------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| POST   | `/posts`                           | Body: `{content, [universityId], [replyTo]}` | Creates a new post or reply. If replyTo is provided, it creates a reply to the specified post.             |
-| POST   | `/posts/{id}/like`                 | Path: id                                     | Likes a post (requires auth).                                                                              |
-| POST   | `/posts/{id}/unlike`               | Path: id                                     | Removes a like from a post (requires auth).                                                                |
-| POST   | `/posts/{id}/dislike`              | Path: id                                     | Dislikes a post (requires auth).                                                                           |
-| POST   | `/posts/{id}/undislike`            | Path: id                                     | Removes a dislike from a post (requires auth).                                                             |
-| DELETE | `/posts/{id}`                      | Path: id                                     | Deletes a post or reply. Users can delete their own content; moderators and admins can delete any content. |
-| GET    | `/posts`                           | Query: `page=number`                         | Retrieves posts for the home feed. Returns 50 posts per page.                                              |
-| GET    | `/users/{username}/posts`          | Path: username, Query: `page=number`         | Retrieves posts by a specific user. Returns 50 posts per page.                                             |
-| GET    | `/posts/{id}`                      | Path: id                                     | Retrieves a specific post.                                                                                 |
-| GET    | `/posts/{id}/replies`              | Path: id, Query: `page=number`               | Retrieves replies to a specific post. Returns 50 replies per page.                                         |
-| GET    | `/posts/university/{universityId}` | Path: universityId, Query: `page=number`     | Retrieves posts for a specific university. Returns 50 posts per page.                                      |
+| Method | Endpoint                | Parameters                                   | Description                                                                                                |
+| ------ | ----------------------- | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| POST   | `/posts`                | Body: `{content, [universityId], [replyTo]}` | Creates a new post or reply. If replyTo is provided, it creates a reply to the specified post.             |
+| GET    | `/posts/{id}`           | Path: id                                     | Retrieves a specific post.                                                                                 |
+| GET    | `/posts/{id}/replies`   | Path: id, Query: `page=number`               | Retrieves replies to a specific post. Returns 50 replies per page.                                         |
+| DELETE | `/posts/{id}`           | Path: id                                     | Deletes a post or reply. Users can delete their own content; moderators and admins can delete any content. |
+| POST   | `/posts/{id}/like`      | Path: id                                     | Likes a post (requires auth).                                                                              |
+| POST   | `/posts/{id}/dislike`   | Path: id                                     | Dislikes a post (requires auth).                                                                           |
+| DELETE | `/posts/{id}/unlike`    | Path: id                                     | Removes a like from a post (requires auth).                                                                |
+| DELETE | `/posts/{id}/undislike` | Path: id                                     | Removes a dislike from a post (requires auth).                                                             |
 
-- To post to a specific university, include `universityId` in the POST `/posts` body.
-- Replies are treated as posts with a `replyTo` field, and are deleted using the same endpoint as regular posts.
+## Feeds
+
+Endpoints for accessing different content feeds.
+
+| Method | Endpoint                             | Parameters                               | Description                                                           |
+| ------ | ------------------------------------ | ---------------------------------------- | --------------------------------------------------------------------- |
+| GET    | `/feeds/home`                        | Query: `page=number`                     | Retrieves posts for the home feed. Returns 50 posts per page.         |
+| GET    | `/feeds/universities/{universityId}` | Path: universityId, Query: `page=number` | Retrieves posts for a specific university. Returns 50 posts per page. |
+| GET    | `/feeds/users/{username}`            | Path: username, Query: `page=number`     | Retrieves posts by a specific user. Returns 50 posts per page.        |
 
 ## Messages
 
@@ -182,33 +181,31 @@ Endpoints for managing user notifications.
 | ------ | ------------------------------ | ---------- | ----------------------------------------------------------------- |
 | GET    | `/notifications`               | None       | Retrieves all notifications for the user (last 50, unread first). |
 | GET    | `/notifications/unread-count`  | None       | Retrieves the count of unread notifications.                      |
-| POST   | `/notifications/{id}`          | Path: id   | Marks a specific notification as read.                            |
-| POST   | `/notifications/mark-all-read` | None       | Marks all notifications as read.                                  |
+| PUT    | `/notifications/{id}`          | Path: id   | Marks a specific notification as read.                            |
+| PUT    | `/notifications/mark-all-read` | None       | Marks all notifications as read.                                  |
 | DELETE | `/notifications/delete-all`    | None       | Deletes all notifications.                                        |
 
 - Notifications are limited to the last 50; older notifications are automatically deleted.
 
-## Avatar
+## Admin
 
-Endpoints for managing user avatars.
+Endpoints for administrative actions.
 
-| Method | Endpoint                   | Parameters                                        | Description                                                 |
-| ------ | -------------------------- | ------------------------------------------------- | ----------------------------------------------------------- |
-| GET    | `/users/{username}/avatar` | Path: username                                    | Retrieves a user's avatar (respects privacy settings).      |
-| POST   | `/users/{username}/avatar` | Path: username, Body: JSON with avatar properties | Updates the user's avatar (requires auth, only own avatar). |
+| Method | Endpoint                       | Parameters                          | Description                                           |
+| ------ | ------------------------------ | ----------------------------------- | ----------------------------------------------------- |
+| PUT    | `/admin/users/{username}/role` | Path: username, Body: `{role:0\|1}` | Updates a user's role (requires admin authorization). |
 
-## Contact
+- User roles:
+  - 0: Regular user
+  - 1: Moderator
+  - 2: Admin
+- Certain actions require specific roles (e.g., deleting other users' posts, changing roles).
 
-Endpoint for submitting a contact form.
+## Other Endpoints
+
+Miscellaneous endpoints.
 
 | Method | Endpoint   | Parameters                              | Description                                                                                      |
 | ------ | ---------- | --------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | POST   | `/contact` | Body: `{name, email, subject, message}` | Submits a contact form. Subject must be one of: "Genel", "Destek", "Öneri", "Teknik", "Şikayet". |
-
-## Health
-
-Endpoint to check the API's health status.
-
-| Method | Endpoint  | Parameters | Description                     |
-| ------ | --------- | ---------- | ------------------------------- |
-| GET    | `/health` | None       | Checks the API's health status. |
+| GET    | `/health`  | None                                    | Checks the API's health status.                                                                  |
