@@ -8,7 +8,7 @@ info:
 servers:
   - url: http://localhost:8080
     description: Development server
-  - url: https://api.anonsocial.com
+  - url: https://api.dedimki.com
     description: Production server
 
 components:
@@ -781,6 +781,589 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
   
+  /posts/{id}/replies:
+    get:
+      summary: Get replies to a post
+      description: Retrieves all replies to a specific post
+      tags:
+        - Posts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the post to get replies for
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+      responses:
+        '200':
+          description: List of replies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /posts/{id}/like:
+    post:
+      summary: Like a post
+      description: Adds a like to the specified post
+      tags:
+        - Posts
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Post ID to like
+      responses:
+        '200':
+          description: Post liked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Gönderi beğenildi"
+
+  /posts/{id}/dislike:
+    post:
+      summary: Dislike a post
+      description: Adds a dislike to the specified post
+      tags:
+        - Posts
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Post ID to dislike
+      responses:
+        '200':
+          description: Post disliked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Gönderi beğenilmedi"
+
+  /posts/{id}/unlike:
+    delete:
+      summary: Remove like from post
+      description: Removes a previously added like from a post
+      tags:
+        - Posts
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Post ID to remove like from
+      responses:
+        '200':
+          description: Like removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Beğeni kaldırıldı"
+
+  /posts/{id}/undislike:
+    delete:
+      summary: Remove dislike from post
+      description: Removes a previously added dislike from a post
+      tags:
+        - Posts
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Post ID to remove dislike from
+      responses:
+        '200':
+          description: Dislike removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Beğenmeme kaldırıldı"
+
+  /feeds/home:
+    get:
+      summary: Get home feed
+      description: Retrieves posts for the home feed (most recent posts)
+      tags:
+        - Feeds
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+      responses:
+        '200':
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+
+  /feeds/university/{universityId}:
+    get:
+      summary: Get university feed
+      description: Retrieves posts for a specific university
+      tags:
+        - Feeds
+      parameters:
+        - name: universityId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID of the university
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+      responses:
+        '200':
+          description: List of university-specific posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        '404':
+          description: University not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /feeds/user/{username}:
+    get:
+      summary: Get user feed
+      description: Retrieves posts from a specific user
+      tags:
+        - Feeds
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Username to get posts from
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number for pagination
+      responses:
+        '200':
+          description: List of user's posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        '403':
+          description: User profile is private
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /notifications:
+    get:
+      summary: Get all notifications
+      description: Retrieves all notifications for the authenticated user
+      tags:
+        - Notifications
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    type:
+                      type: string
+                      enum: [like, reply, message]
+                    senderUsername:
+                      type: string
+                    targetId:
+                      type: string
+                    read:
+                      type: boolean
+                    createdAt:
+                      type: string
+                      format: date-time
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /notifications/unread-count:
+    get:
+      summary: Get unread notification count
+      description: Retrieves the count of unread notifications
+      tags:
+        - Notifications
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Unread notification count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /messages:
+    get:
+      summary: Get conversation list
+      description: Retrieves all conversations for the authenticated user
+      tags:
+        - Messages
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: List of conversations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                    participants:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          userId:
+                            type: string
+                          username:
+                            type: string
+                    lastMessage:
+                      type: object
+                      properties:
+                        content:
+                          type: string
+                        senderId:
+                          type: string
+                        read:
+                          type: boolean
+                        timestamp:
+                          type: string
+                          format: date-time
+                    unreadCount:
+                      type: integer
+                    updatedAt:
+                      type: string
+                      format: date-time
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /messages/unread-count:
+    get:
+      summary: Get unread message count
+      description: Retrieves the total count of unread messages
+      tags:
+        - Messages
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Unread message count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  unreadCount:
+                    type: integer
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /messages/{username}:
+    get:
+      summary: Get conversation with user
+      description: Retrieves messages exchanged with a specific user
+      tags:
+        - Messages
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Username to get conversation with
+      responses:
+        '200':
+          description: Conversation details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  participants:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        userId:
+                          type: string
+                        username:
+                          type: string
+                  messages:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        senderId:
+                          type: string
+                        content:
+                          type: string
+                        read:
+                          type: boolean
+                        createdAt:
+                          type: string
+                          format: date-time
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      summary: Send message to user
+      description: Sends a new message to a specific user
+      tags:
+        - Messages
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Username to send message to
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  example: "Hello, how are you?"
+      responses:
+        '200':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  participants:
+                    type: array
+                    items:
+                      type: object
+                  messages:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    delete:
+      summary: Delete conversation
+      description: Deletes the entire conversation with a specific user
+      tags:
+        - Messages
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Username whose conversation to delete
+      responses:
+        '200':
+          description: Conversation deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Görüşme silindi"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /messages/{username}/read:
+    post:
+      summary: Mark conversation as read
+      description: Marks all messages in a conversation as read
+      tags:
+        - Messages
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Username whose messages to mark as read
+      responses:
+        '200':
+          description: Messages marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Mesajlar okundu olarak işaretlendi"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Conversation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /admin/users/{username}/role:
     put:
       summary: Update user role
@@ -790,12 +1373,11 @@ paths:
       security:
         - cookieAuth: []
       parameters:
-        - in: path
-          name: username
+        - name: username
+          in: path
           required: true
           schema:
             type: string
-          description: Username of the user to update
       requestBody:
         required: true
         content:
@@ -807,11 +1389,12 @@ paths:
               properties:
                 role:
                   type: integer
-                  enum: [0, 1]
-                  description: "0=Regular user, 1=Moderator"
+                  enum: [0, 1, 2]
+                  description: "0: regular user, 1: moderator, 2: admin"
+                  example: 1
       responses:
         '200':
-          description: Role updated successfully
+          description: Role updated
           content:
             application/json:
               schema:
@@ -821,21 +1404,23 @@ paths:
                     type: string
                     example: "Kullanıcı yetkisi güncellendi"
         '400':
-          description: Invalid input or role value
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
         '403':
-          description: Admin privileges required
+          description: Forbidden - insufficient permissions
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Bu işlem için yönetici yetkileri gerekiyor"
+                $ref: '#/components/schemas/Error'
         '404':
           description: User not found
           content:
@@ -848,13 +1433,32 @@ paths:
       summary: Submit contact form
       description: Submits a contact form with feedback
       tags:
-        - Contact
+        - Misc
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Contact'
+              type: object
+              required:
+                - name
+                - email
+                - subject
+                - message
+              properties:
+                name:
+                  type: string
+                  example: "John Doe"
+                email:
+                  type: string
+                  format: email
+                  example: "john@example.com"
+                subject:
+                  type: string
+                  example: "Genel"
+                message:
+                  type: string
+                  example: "This is a test message for the contact form."
       responses:
         '200':
           description: Form submitted successfully
@@ -865,8 +1469,99 @@ paths:
                 properties:
                   message:
                     type: string
+                    example: "Form successfully submitted"
         '400':
           description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /notifications/{id}:
+    put:
+      summary: Mark notification as read
+      description: Marks a specific notification as read
+      tags:
+        - Notifications
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Notification marked as read"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Notification not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /notifications/mark-all-read:
+    put:
+      summary: Mark all notifications as read
+      description: Marks all notifications for the authenticated user as read
+      tags:
+        - Notifications
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: All notifications marked as read
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "All notifications marked as read"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /notifications/delete-all:
+    delete:
+      summary: Delete all notifications
+      description: Deletes all notifications for the authenticated user
+      tags:
+        - Notifications
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: All notifications deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Tüm bildirimler silindi"
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:

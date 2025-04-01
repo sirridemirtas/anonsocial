@@ -1,36 +1,22 @@
 # AnonSocial API Testing Guide with Postman
 
-This guide explains how to use the Postman collection for testing the AnonSocial API endpoints.
+This guide provides instructions for testing the AnonSocial API using the Postman collection.
+
+## Prerequisites
+
+- [Postman](https://www.postman.com/downloads/) installed on your machine
+- Access to the AnonSocial API (local development or hosted environment)
 
 ## Setup
 
-### Prerequisites
+1. Import the `anonsocial_postman_collection.json` file into Postman
+2. Create an environment in Postman with the following variables:
+   - `baseUrl`: The base URL of the API (e.g., `http://localhost:8080/api/v1`)
+   - `testUsername`: (Will be automatically generated during test run - alphanumeric only)
+   - `testPassword`: (Will be automatically generated during test run)
+   - `universityId`: A valid university ID (default is "115373")
 
-1. [Postman](https://www.postman.com/downloads/) installed
-2. AnonSocial server running (default: http://localhost:8080)
-
-### Import the Collection
-
-1. Open Postman
-2. Click "Import" button in the top left
-3. Select the `anonsocial_postman_collection.json` file
-4. The collection will appear in your Postman workspace
-
-### Set Up Environment
-
-1. Create a new Environment in Postman by clicking on "Environments" in the sidebar and then "+" button
-2. Name it "AnonSocial Development"
-3. Add the following variables:
-   - `baseUrl`: http://localhost:8080/api/v1 (or your server URL)
-   - `testUsername`: Leave empty (will be auto-generated)
-   - `testPassword`: Leave empty (will be auto-generated)
-   - `universityId`: 115373 (this is a valid university ID, do not change)
-   - `token`: Leave empty (will be set during tests)
-   - `testUserId`: (Optional) ID of an existing user for testing
-   - `postId`: (Optional) ID of an existing post for testing
-   - `targetUsername`: (Optional) Username of another user to test admin operations
-4. Save the environment
-5. Select the environment from the dropdown in the top right corner
+> **Note:** Usernames in AnonSocial must contain only letters and numbers. The test scripts automatically generate compliant usernames.
 
 ## Running Tests
 
@@ -38,9 +24,9 @@ This guide explains how to use the Postman collection for testing the AnonSocial
 
 All requests in the collection use the `{{baseUrl}}` variable. Make sure this variable is properly set in your environment:
 
-- Development: http://localhost:8080
-- Staging: https://staging-api.anonsocial.com
-- Production: https://api.anonsocial.com
+- Development: http://localhost:8080/api/v1
+
+> **Note:** The API returns messages in Turkish. The test scripts have been updated to handle these responses.
 
 ### Sequence of Testing
 
@@ -48,91 +34,106 @@ For best results, run the endpoints in this order:
 
 1. **Authentication (Phase 1)**
 
-   - Register a new user
-   - Login with the created user
-   - Get token information
+   - Register a new user (POST)
+   - Login with the created user (POST)
+   - Get token information (GET)
 
 2. **User Profile Management**
 
-   - Get user profile
-   - Check username availability
-   - Update user privacy
+   - Get user profile (GET)
+   - Check username availability (GET)
+   - Update user privacy (PUT)
 
 3. **Avatar Management**
 
-   - Update/Create user avatar (first)
-   - Get user avatar (after creating it)
+   - Update/Create user avatar (POST)
+   - Get user avatar (GET)
 
 4. **Post Management**
 
-   - Create new post
-   - Get post by ID
-   - Create reply to post
+   - Create new post (POST)
+   - Get post by ID (GET)
+   - Create reply to post (POST)
 
 5. **Post Interaction**
 
-   - Delete reply (uses the regular post deletion endpoint)
-   - Delete post
+   - Delete reply (DELETE)
+   - Delete post (DELETE)
 
 6. **Password Management**
 
-   - Reset user password
-   - Login with new password (required after password reset)
+   - Reset user password (PUT)
+   - Login with new password (POST)
 
 7. **Authentication (Phase 2)**
 
-   - Get token information (verify new login)
+   - Get token information (GET)
 
-8. **Admin Operations** (requires admin privileges)
+8. **Multi-User Interaction**
 
-   - Update user role
+   - Register second user (POST)
+   - Login as first user (POST)
+   - Create post as first user (POST)
+   - Logout first user (POST)
+   - Login as second user (POST)
+   - Get post as second user (GET)
+   - Like post and reply to it (POST)
+   - Send message to first user (POST)
+   - Logout second user (POST)
+   - Login first user again (POST)
 
-9. **Cleanup**
-   - Logout (do this last)
-   - Delete user (requires moderator role, very last step)
+9. **Notification Management**
+
+   - Check unread notification count (GET)
+   - Get all notifications (GET)
+   - Mark single notification as read (PUT)
+   - Mark all notifications as read (PUT)
+   - Delete all notifications (DELETE)
+
+10. **Message Management**
+
+    - Get unread message count (GET)
+    - Get conversation list (GET)
+    - Get conversation with specific user (GET)
+    - Mark conversation as read (POST)
+    - Send reply message (POST)
+    - Delete conversation (DELETE)
+
+11. **Admin Operations** (requires admin privileges)
+
+    - Update user role (PUT)
+
+12. **Contact Form**
+
+    - Submit contact form (POST)
+
+13. **Final Cleanup**
+    - Logout user (POST)
+    - Delete test users (DELETE)
+
+### Message API Response Format
+
+When working with the messaging endpoints, note that the API returns:
+
+- `/messages/unread-count` returns an object with an `unreadCount` property
+- `/messages` returns an array of conversation objects with `id`, `participants`, and other properties
+- `/messages/{username}` returns a single conversation object with `id`, `participants`, and `messages` properties
+- When sending messages, the API returns the updated conversation object, not just a success message
 
 ### Automation
 
-You can run the entire collection as an automated test:
+The collection includes test scripts to validate responses and automatically store important values like IDs and tokens for use in subsequent requests. These scripts run after each request to ensure proper testing flow.
 
-1. Click the three dots (...) next to the collection name
-2. Select "Run collection"
-3. Configure the run settings
-4. Click "Run AnonSocial API"
+Pre-request scripts generate random usernames and passwords for testing purposes, ensuring unique test data on each run.
 
-## Environment Variables
+## Expected Results
 
-The collection uses pre-request scripts to automatically generate test values:
+When run successfully, the collection should:
 
-- Random usernames
-- Random passwords
-- Valid university ID (preset to "115373")
+1. Create and authenticate users
+2. Create, retrieve, and interact with posts
+3. Test notification and messaging features
+4. Verify proper error handling for invalid requests
+5. Clean up test data to avoid cluttering the database
 
-It also automatically captures authentication tokens from responses and stores them for subsequent requests.
-
-### Important Note About University ID
-
-The `universityId` is NOT randomly generated because it must be a valid ID from the system's recognized university list. The collection uses "115373" as a valid ID for testing purposes. If this ID becomes invalid, you'll need to manually update it in your environment with another valid university ID.
-
-## Troubleshooting
-
-### Authentication Issues
-
-- If you see 401 Unauthorized errors, make sure your token is valid
-- The collection automatically captures tokens from login responses
-- You may need to re-login if your session expires
-
-### Missing Resources
-
-- Some tests require existing resources (post IDs, user IDs)
-- If you don't have these resources, add them manually to your environment
-
-### Base URL Problems
-
-- If you're getting connection errors, verify that the `baseUrl` variable is set correctly for your environment
-
-## Notes for Developers
-
-- The test scripts include proper validation for different response codes
-- Failed tests include descriptive messages to help identify issues
-- The collection handles both success and error paths for most endpoints
+If any test fails, check the API logs for more detailed error information.

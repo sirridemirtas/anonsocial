@@ -571,7 +571,7 @@
         {
           "name": "6.1 - Reset User Password",
           "request": {
-            "method": "POST",
+            "method": "PUT",
             "header": [
               {
                 "key": "Content-Type",
@@ -868,6 +868,1043 @@
           ]
         }
       ]
+    },
+    {
+      "name": "11 - Multi-User Interaction",
+      "description": "Tests requiring two users to interact with each other",
+      "item": [
+        {
+          "name": "11.1 - Register Second User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{testUsername2}}\",\n    \"password\": \"{{testPassword2}}\",\n    \"universityId\": \"{{universityId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Creates a second test user account"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"User registered successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    // Store second user ID",
+                  "    if (jsonData.id) {",
+                  "        pm.environment.set(\"testUserId2\", jsonData.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11.2 - Login as First User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{testUsername}}\",\n    \"password\": \"NewSecurePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with the first user account"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Login successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.environment.set(\"token1\", pm.environment.get(\"token\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11.3 - Create Post as First User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"content\": \"This is a test post for multi-user interaction!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts"]
+            },
+            "description": "First user creates a post"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Post created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.expect(jsonData).to.have.property('content');",
+                  "    pm.expect(jsonData).to.have.property('createdAt');",
+                  "    // Store the post ID for future tests",
+                  "    if (jsonData.id) {",
+                  "        pm.environment.set(\"interactionPostId\", jsonData.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11.4 - Logout First User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logs out the first user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Logout successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql(\"Çıkış başarılı\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11.5 - Login as Second User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{testUsername2}}\",\n    \"password\": \"{{testPassword2}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with the second user account"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Login successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.environment.set(\"token2\", pm.environment.get(\"token\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11.6 - Get Post as Second User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{interactionPostId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "{{interactionPostId}}"]
+            },
+            "description": "Second user gets the post created by first user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Post retrieved successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData.id).to.eql(pm.environment.get(\"interactionPostId\"));",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "    pm.expect(jsonData.username).to.eql(pm.environment.get(\"testUsername\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11.7 - Second User Likes First User's Post",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{interactionPostId}}/like",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "{{interactionPostId}}", "like"]
+            },
+            "description": "Second user likes the post from first user (generates notification)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Like successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.include('liked');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11.8 - Second User Replies to First User's Post",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"content\": \"This is a reply from the second user!\",\n    \"replyTo\": \"{{interactionPostId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts"]
+            },
+            "description": "Second user replies to first user's post (generates notification)"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Reply created successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('replyTo');",
+                  "    pm.expect(jsonData.replyTo).to.eql(pm.environment.get(\"interactionPostId\"));",
+                  "    // Store the reply ID",
+                  "    if (jsonData.id) {",
+                  "        pm.environment.set(\"interactionReplyId\", jsonData.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11.9 - Second User Sends Message to First User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"content\": \"Hello from the second user! This is a test message.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/messages/{{testUsername}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["messages", "{{testUsername}}"]
+            },
+            "description": "Second user sends a message to first user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Message sent successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.include('sent');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11.10 - Logout Second User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logs out the second user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Logout successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql(\"Çıkış başarılı\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11.11 - Login First User Again",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{testUsername}}\",\n    \"password\": \"NewSecurePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login again with the first user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Login successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('username');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "12 - Notification Management",
+      "description": "Tests for notification endpoints",
+      "item": [
+        {
+          "name": "12.1 - Check Unread Notification Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "unread-count"]
+            },
+            "description": "Check the number of unread notifications for first user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Unread count retrieved\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('count');",
+                  "    // Should have at least 2 notifications (like and reply)",
+                  "    pm.expect(jsonData.count).to.be.at.least(2);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12.2 - Get All Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"]
+            },
+            "description": "Get all notifications for first user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Notifications retrieved\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(2);",
+                  "    ",
+                  "    // Store first notification ID for later test",
+                  "    if (jsonData.length > 0) {",
+                  "        pm.environment.set(\"notificationId\", jsonData[0].id);",
+                  "    }",
+                  "    ",
+                  "    // Check notification structure",
+                  "    if (jsonData.length > 0) {",
+                  "        pm.expect(jsonData[0]).to.have.property('id');",
+                  "        pm.expect(jsonData[0]).to.have.property('type');",
+                  "        pm.expect(jsonData[0]).to.have.property('senderUsername');",
+                  "        pm.expect(jsonData[0]).to.have.property('read');",
+                  "        pm.expect(jsonData[0]).to.have.property('createdAt');",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12.3 - Mark Single Notification as Read",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "{{notificationId}}"]
+            },
+            "description": "Mark a specific notification as read"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Notification marked as read\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.include('marked as read');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12.4 - Mark All Notifications as Read",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/mark-all-read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "mark-all-read"]
+            },
+            "description": "Mark all notifications as read"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"All notifications marked as read\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    pm.expect(jsonData.message).to.include('marked as read');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12.5 - Check Unread Count After Marking Read",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "unread-count"]
+            },
+            "description": "Verify the unread count is now zero"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Unread count should be zero\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('count');",
+                  "    pm.expect(jsonData.count).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12.6 - Delete All Notifications",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/delete-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "delete-all"]
+            },
+            "description": "Delete all notifications"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"All notifications deleted\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    // Accept Turkish message: 'Tüm bildirimler silindi'",
+                  "    pm.expect(jsonData.message).to.include('silindi');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "13 - Message Management",
+      "description": "Tests for messaging endpoints",
+      "item": [
+        {
+          "name": "13.1 - Get Unread Message Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/messages/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["messages", "unread-count"]
+            },
+            "description": "Get the count of unread messages"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Unread message count retrieved\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    // API returns unreadCount instead of count",
+                  "    pm.expect(jsonData).to.have.property('unreadCount');",
+                  "    // Should have at least 1 unread message from second user",
+                  "    pm.expect(jsonData.unreadCount).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13.2 - Get Conversation List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["messages"]
+            },
+            "description": "Get the list of conversations"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Conversation list retrieved\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.at.least(1);",
+                  "    ",
+                  "    // Check conversation structure",
+                  "    if (jsonData.length > 0) {",
+                  "        // Updated to match the actual structure returned by API",
+                  "        pm.expect(jsonData[0]).to.have.property('id');",
+                  "        pm.expect(jsonData[0]).to.have.property('participants');",
+                  "        ",
+                  "        // Check for the second user in participants",
+                  "        // Try to find conversation with second user as participant",
+                  "        let foundConversation = false;",
+                  "        for (let i = 0; i < jsonData.length; i++) {",
+                  "            if (jsonData[i].participants && ",
+                  "                jsonData[i].participants.some(p => p.username === pm.environment.get(\"testUsername2\"))) {",
+                  "                foundConversation = true;",
+                  "                break;",
+                  "            }",
+                  "        }",
+                  "        pm.expect(foundConversation).to.be.true;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13.3 - Get Conversation with Second User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/messages/{{testUsername2}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["messages", "{{testUsername2}}"]
+            },
+            "description": "Get the conversation with the second user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Conversation messages retrieved\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    ",
+                  "    // Check conversation object structure - API returns a conversation object, not an array",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('participants');",
+                  "    pm.expect(jsonData).to.have.property('messages');",
+                  "    ",
+                  "    // Check that we have messages in the conversation",
+                  "    pm.expect(jsonData.messages).to.be.an('array');",
+                  "    pm.expect(jsonData.messages.length).to.be.at.least(1);",
+                  "    ",
+                  "    // Check message structure if messages exist",
+                  "    if (jsonData.messages.length > 0) {",
+                  "        pm.expect(jsonData.messages[0]).to.have.property('content');",
+                  "        pm.expect(jsonData.messages[0]).to.have.property('senderId');",
+                  "    }",
+                  "    ",
+                  "    // Verify second user is a participant",
+                  "    const secondUserFound = jsonData.participants.some(p => p.username === pm.environment.get(\"testUsername2\"));",
+                  "    pm.expect(secondUserFound).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13.4 - Mark Conversation as Read",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/messages/{{testUsername2}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["messages", "{{testUsername2}}", "read"]
+            },
+            "description": "Mark the conversation with the second user as read"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Conversation marked as read\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    // Accept Turkish message: 'Mesajlar okundu olarak işaretlendi'",
+                  "    pm.expect(jsonData.message).to.include('okundu');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13.5 - Send Reply Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"content\": \"Thanks for your message! This is a reply from the first user.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/messages/{{testUsername2}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["messages", "{{testUsername2}}"]
+            },
+            "description": "First user sends a reply to second user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Message sent successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    // Message sending returns the conversation object, not just a status message",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('participants');",
+                  "    pm.expect(jsonData).to.have.property('messages');",
+                  "    ",
+                  "    // Verify message was added",
+                  "    pm.expect(jsonData.messages).to.be.an('array');",
+                  "    pm.expect(jsonData.messages.length).to.be.at.least(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13.6 - Check Unread Message Count After Reading",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/messages/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["messages", "unread-count"]
+            },
+            "description": "Verify the unread count is now zero"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Unread message count should be zero\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    // API returns unreadCount instead of count",
+                  "    pm.expect(jsonData).to.have.property('unreadCount');",
+                  "    pm.expect(jsonData.unreadCount).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13.7 - Delete Conversation",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/messages/{{testUsername2}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["messages", "{{testUsername2}}"]
+            },
+            "description": "Delete the conversation with the second user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Conversation deleted successfully\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('message');",
+                  "    // Accept Turkish message: 'Görüşme silindi'",
+                  "    pm.expect(jsonData.message).to.include('silindi');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "14 - Final Cleanup",
+      "description": "Final cleanup operations for both test users",
+      "item": [
+        {
+          "name": "14.1 - Logout First User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logs out the first user"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Logout successful\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.eql(\"Çıkış başarılı\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "14.2 - Login as Second User for Cleanup",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"{{testUsername2}}\",\n    \"password\": \"{{testPassword2}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with the second user account"
+          },
+          "response": []
+        },
+        {
+          "name": "14.3 - Delete Second User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{testUserId2}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{testUserId2}}"]
+            },
+            "description": "This will likely only work with moderator privileges, but including for completeness"
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "event": [
@@ -878,6 +1915,7 @@
         "exec": [
           "// Generate random test values if not present",
           "if (!pm.environment.get(\"testUsername\")) {",
+          "    // Username must contain only letters and numbers",
           "    pm.environment.set(\"testUsername\", \"testuser\" + Math.floor(Math.random() * 100000));",
           "}",
           "if (!pm.environment.get(\"testPassword\")) {",
@@ -889,6 +1927,14 @@
           "}",
           "if (!pm.environment.get(\"targetUsername\")) {",
           "    pm.environment.set(\"targetUsername\", \"targetuser\" + Math.floor(Math.random() * 100000));",
+          "}",
+          "// Generate second test user credentials",
+          "if (!pm.environment.get(\"testUsername2\")) {",
+          "    // Ensure second username is also alphanumeric only (no underscores)",
+          "    pm.environment.set(\"testUsername2\", \"testuser2\" + Math.floor(Math.random() * 100000));",
+          "}",
+          "if (!pm.environment.get(\"testPassword2\")) {",
+          "    pm.environment.set(\"testPassword2\", \"SecurePass2\" + Math.floor(Math.random() * 100000));",
           "}"
         ]
       }
