@@ -20,6 +20,7 @@ func main() {
 	controllers.SetPostCollection(database.GetClient())
 	controllers.SetConversationCollection(database.GetClient())
 	controllers.SetNotificationCollection(database.GetClient())
+	controllers.SetSitemapPostCollection(database.GetClient())
 
 	router := gin.Default()
 	router.Use(middleware.Cors())
@@ -43,6 +44,11 @@ func main() {
 			"status":  "ok",
 			"message": "Server is running",
 		})
+	})
+
+	// Serve the sitemap.xml file for the Frontend App
+	apiV1.GET("/sitemap.xml", func(c *gin.Context) {
+		controllers.GenerateSitemapXML(c.Writer, c.Request)
 	})
 
 	router.Run(":" + config.AppConfig.Port)
