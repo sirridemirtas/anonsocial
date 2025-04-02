@@ -19,8 +19,8 @@ func MessageRoutes(rg *gin.RouterGroup) {
 	// Get conversation with specific user
 	messages.GET("/:username", controllers.GetConversation)
 
-	// Send message to specific user
-	messages.POST("/:username", controllers.SendMessage)
+	// Send message to specific user - add ActivityTracker middleware
+	messages.POST("/:username", middleware.ActivityTracker(), controllers.SendMessage)
 
 	// Mark messages as read
 	messages.POST("/:username/read", controllers.MarkConversationAsRead)

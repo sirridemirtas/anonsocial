@@ -13,7 +13,7 @@ func PostRoutes(rg *gin.RouterGroup) {
 		posts.GET("/:id", middleware.OptionalAuth(), controllers.GetPost)
 		posts.GET("/:id/replies", middleware.OptionalAuth(), controllers.GetPostReplies)
 
-		posts.POST("", middleware.Auth(0), controllers.CreatePost)
+		posts.POST("", middleware.Auth(0), middleware.ActivityTracker(), controllers.CreatePost)
 		posts.DELETE("/:id", middleware.Auth(0), controllers.DeletePost)
 
 		posts.POST("/:id/like", middleware.Auth(0), controllers.LikePost)

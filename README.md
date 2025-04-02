@@ -191,9 +191,10 @@ Endpoints for managing user notifications.
 
 Endpoints for administrative actions.
 
-| Method | Endpoint                       | Parameters                          | Description                                           |
-| ------ | ------------------------------ | ----------------------------------- | ----------------------------------------------------- |
-| PUT    | `/admin/users/{username}/role` | Path: username, Body: `{role:0\|1}` | Updates a user's role (requires admin authorization). |
+| Method | Endpoint                             | Parameters                          | Description                                           |
+| ------ | ------------------------------------ | ----------------------------------- | ----------------------------------------------------- |
+| PUT    | `/admin/users/{username}/role`       | Path: username, Body: `{role:0\|1}` | Updates a user's role (requires admin authorization). |
+| PUT    | `/admin/users/{username}/activities` | None                                | Get user activities (requires admin authorization).   |
 
 - User roles:
   - 0: Regular user

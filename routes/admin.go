@@ -12,4 +12,7 @@ func AdminRoutes(rg *gin.RouterGroup) {
 
 	// Update user role (only admins can update roles, and only to 0 or 1)
 	admin.PUT("/users/:username/role", controllers.UpdateUserRole)
+
+	// Get user activities
+	admin.GET("/users/:username/activities", controllers.GetUserActivities)
 }
