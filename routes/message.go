@@ -20,10 +20,10 @@ func MessageRoutes(rg *gin.RouterGroup) {
 	messages.GET("/:username", controllers.GetConversation)
 
 	// Send message to specific user - add ActivityTracker middleware
-	messages.POST("/:username", middleware.ActivityTracker(), controllers.SendMessage)
+	messages.POST("/:username", middleware.CustomRateLimit(1, 2), middleware.ActivityTracker(), controllers.SendMessage)
 
 	// Mark messages as read
-	messages.POST("/:username/read", controllers.MarkConversationAsRead)
+	messages.POST("/:username/read", middleware.CustomRateLimit(1, 2), controllers.MarkConversationAsRead)
 
 	// Delete conversation with specific user
 	messages.DELETE("/:username", controllers.DeleteConversation)

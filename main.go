@@ -22,12 +22,12 @@ func main() {
 	controllers.SetNotificationCollection(database.GetClient())
 	controllers.SetSitemapPostCollection(database.GetClient())
 
-	// Initialize activity collection
 	middleware.SetActivityCollection(database.GetClient(), config.AppConfig.MongoDB_DB)
 	controllers.SetActivityCollection(database.GetClient(), config.AppConfig.MongoDB_DB)
 
 	router := gin.Default()
 	router.Use(middleware.Cors())
+	router.Use(middleware.RateLimit())
 
 	apiV1 := router.Group("/api/v1")
 

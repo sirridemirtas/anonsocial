@@ -8,6 +8,7 @@ import (
 
 func AuthRoutes(rg *gin.RouterGroup) {
 	auth := rg.Group("/auth")
+	auth.Use(middleware.CustomRateLimit(1, 1))
 	{
 		auth.POST("/register", controllers.Register)
 		auth.POST("/login", controllers.Login)
